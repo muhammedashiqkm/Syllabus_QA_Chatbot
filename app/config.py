@@ -1,0 +1,33 @@
+import os
+from dotenv import load_dotenv
+from datetime import timedelta
+
+# Load environment variables from .env file
+load_dotenv()
+
+class Config:
+    """Application configuration settings."""
+    
+    # Database configuration
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError("No DATABASE_URL found in environment variables")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Google API Key
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    if not GOOGLE_API_KEY:
+        raise ValueError("No GOOGLE_API_KEY found in environment variables")
+
+    # JWT Configuration
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+    if not JWT_SECRET_KEY:
+        raise ValueError("No JWT_SECRET_KEY found in environment variables")
+        
+    # --- MODIFIED ---
+    # Load token expiration from .env in HOURS, defaulting to 24 hours.
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 24)))
+
+    # AI Model Configuration
+    EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "models/text-embedding-004")
+    LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "gemini-1.5-flash")

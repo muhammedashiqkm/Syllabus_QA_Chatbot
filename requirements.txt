@@ -1,0 +1,23 @@
+#Flask and extensions
+Flask
+Flask-SQLAlchemy
+Flask-JWT-Extended
+Flask-Limiter
+Flask-Bcrypt
+marshmallow
+
+#Database
+psycopg2-binary
+pgvector
+
+#PDF and AI
+requests
+pypdf
+google-generativeai
+python-dotenv
+
+#Text processing
+langchain
+gunicorn
+
+pymemcache

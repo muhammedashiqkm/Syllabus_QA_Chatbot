@@ -1,0 +1,34 @@
+# Environment Variables
+# Never commit your .env file which contains secrets!
+.env
+
+# Virtual Environment
+# Ignores common virtual environment folders
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache and artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+build/
+dist/
+*.egg-info/
+
+# Flask specific
+# The instance folder can contain sensitive configuration
+instance/
+
+# Log files
+*.log
+
+# IDE and editor specific files
+.vscode/
+.idea/
+
+# Operating System specific files
+.DS_Store
+Thumbs.db
