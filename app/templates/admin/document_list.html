@@ -1,0 +1,11 @@
+{% extends 'admin/model/list.html' %}
+
+{% macro render_processing_time(model, column) %}
+    {# This macro checks if the processing time exists. #}
+    {% if model.processing_time_ms is none %}
+        -
+    {% else %}
+        {# If it exists, it converts milliseconds to seconds and formats to 2 decimal places. #}
+        {{ "%.2f"|format(model.processing_time_ms / 1000) }}s
+    {% endif %}
+{% endmacro %}

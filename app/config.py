@@ -7,7 +7,22 @@ load_dotenv()
 
 class Config:
     """Application configuration settings."""
-    
+
+    # Flask Secret Key for session management and security
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    if not SECRET_KEY:
+        raise ValueError("No SECRET_KEY found in environment variables. This is required for security.")
+
+    # --- ADDED ---
+    # Admin User Configuration
+    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME",'admin')
+    if not ADMIN_USERNAME:
+        raise ValueError("No ADMIN_USERNAME found in environment variables.")
+        
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD",'password')
+    if not ADMIN_PASSWORD:
+        raise ValueError("No ADMIN_PASSWORD found in environment variables.")
+
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     if not SQLALCHEMY_DATABASE_URI:
@@ -24,7 +39,6 @@ class Config:
     if not JWT_SECRET_KEY:
         raise ValueError("No JWT_SECRET_KEY found in environment variables")
         
-    # --- MODIFIED ---
     # Load token expiration from .env in HOURS, defaulting to 24 hours.
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 24)))
 

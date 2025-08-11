@@ -1,23 +1,15 @@
-#Flask and extensions
 Flask
 Flask-SQLAlchemy
 Flask-JWT-Extended
 Flask-Limiter
-Flask-Bcrypt
+Flask-Admin
 marshmallow
-
-#Database
 psycopg2-binary
 pgvector
-
-#PDF and AI
-requests
 pypdf
+requests
 google-generativeai
-python-dotenv
-
-#Text processing
 langchain
-gunicorn
-
-pymemcache
+python-dotenv
+werkzeug
+click

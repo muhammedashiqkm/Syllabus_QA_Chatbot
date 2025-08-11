@@ -6,3 +6,7 @@
 2025-08-07 13:57:49 - security - INFO - Successful login for user: admin
 2025-08-07 14:16:06 - security - INFO - Successful login for user: admin
 2025-08-07 14:55:00 - security - INFO - Successful login for user: admin
+2025-08-11 12:04:04 - security - WARNING - Failed login attempt for username: admin
+2025-08-11 12:04:09 - security - WARNING - Failed login attempt for username: ashiqkm
+2025-08-11 12:04:22 - security - INFO - New user registered: ashiqkm
+2025-08-11 12:05:49 - security - INFO - Successful login for user: ashiqkm

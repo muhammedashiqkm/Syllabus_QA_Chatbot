@@ -8,14 +8,14 @@ class UserLoginSchema(Schema):
     username = fields.Str(required=True)
     password = fields.Str(required=True)
 
-class AddSubjectSchema(Schema):
-    subjecturl = fields.URL(required=True)
+# schemas.py
 
 class ChatSchema(Schema):    
     chatbot_user_id = fields.Str(required=True)
     question = fields.Str(required=True, validate=validate.Length(min=1))
-    subjectkey = fields.Str(required=True, validate=validate.Length(equal=32))
-
+    syllabus = fields.Str(required=True)
+    subject = fields.Str(required=True)
+    class_name = fields.Str(required=True, data_key="class")
 
 class ClearSessionSchema(Schema):
     chatbot_user_id = fields.Str(required=True)
