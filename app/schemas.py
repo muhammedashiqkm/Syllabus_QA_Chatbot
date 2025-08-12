@@ -3,12 +3,12 @@ from marshmallow import Schema, fields, validate
 class UserRegisterSchema(Schema):
     username = fields.Str(required=True, validate=validate.Length(min=3, max=80))
     password = fields.Str(required=True, validate=validate.Length(min=6, max=128))
+    registration_secret = fields.Str(required=True)
+    is_admin = fields.Bool(load_default=False)
 
 class UserLoginSchema(Schema):
     username = fields.Str(required=True)
     password = fields.Str(required=True)
-
-# schemas.py
 
 class ChatSchema(Schema):    
     chatbot_user_id = fields.Str(required=True)

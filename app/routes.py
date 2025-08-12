@@ -2,7 +2,6 @@ import logging
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, jwt_required
 from marshmallow import ValidationError
-# This import line is now corrected
 from app.models import db, User, Document, DocumentChunk, ChatHistory, Syllabus, ClassModel, Subject
 from app.schemas import UserRegisterSchema, UserLoginSchema, ChatSchema, ClearSessionSchema
 from app.exceptions import ApiError
@@ -21,24 +20,47 @@ api_bp = Blueprint('api', __name__)
 @api_bp.route("/register", methods=["POST"])
 @limiter.limit("5 per hour")
 def register():
-    """User registration endpoint."""
+    """
+    User registration endpoint.
+    Allows creating a user and optionally setting them as an admin in the request.
+    """
     try:
         data = UserRegisterSchema().load(request.get_json())
     except ValidationError as err:
         raise ApiError(f"Validation failed: {err.messages}", 400)
+
+    # --- MODIFIED: The core registration logic is changed below ---
+
+    # Check for the registration secret
+    if data['registration_secret'] != current_app.config['REGISTRATION_SECRET_KEY']:
+        security_logger.warning(f"Invalid registration secret provided by IP: {request.remote_addr}")
+        raise ApiError("Not authorized to perform this action.", 403)
 
     username = data['username']
     if User.query.filter_by(username=username).first():
         security_logger.warning(f"Registration attempt for existing username: {username}")
         raise ApiError("Username already exists.", 409)
 
+    # Create the new user
     new_user = User(username=username)
     new_user.set_password(data['password'])
+    
+    # Set the admin status directly from the request data
+    # The 'is_admin' field defaults to False if not provided, thanks to `load_default` in the schema
+    new_user.is_admin = data['is_admin']
+
     db.session.add(new_user)
     db.session.commit()
-    
-    security_logger.info(f"New user registered: {username}")
-    return jsonify({"message": f"User {username} registered successfully"}), 201
+
+    # Log the event based on whether an admin was created
+    if new_user.is_admin:
+        security_logger.critical(f"Admin user '{username}' created via API request.")
+    else:
+        security_logger.info(f"New user registered: {username}")
+
+    return jsonify({"message": f"User '{username}' registered successfully."}), 201
+
+
 
 @api_bp.route("/login", methods=["POST"])
 @limiter.limit("10 per hour")

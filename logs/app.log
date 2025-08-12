@@ -1006,3 +1006,21 @@ Traceback (most recent call last):
     auth.username == current_app.config['ADMIN_USERNAME'] and
                      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
 KeyError: 'ADMIN_USERNAME'
+2025-08-11 16:03:04 - app - INFO - Document created: 9e96fa42-15e3-4f40-a15e-26859ae3e86b. Triggering embedding process.
+2025-08-11 16:03:04 - app - INFO - Set status to PROCESSING for Document ID: 9e96fa42-15e3-4f40-a15e-26859ae3e86b
+2025-08-11 16:03:09 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 9e96fa42-15e3-4f40-a15e-26859ae3e86b
+2025-08-11 16:12:43 - app - INFO - Document created: 88fa6159-bb94-4370-9938-447284835fe1. Triggering embedding process.
+2025-08-11 16:12:43 - app - INFO - Set status to PROCESSING for Document ID: 88fa6159-bb94-4370-9938-447284835fe1
+2025-08-11 16:14:13 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 88fa6159-bb94-4370-9938-447284835fe1
+2025-08-11 20:29:39 - app - INFO - Document created: 323a1a64-b907-4f2d-ab7a-5a09f411805a. Triggering embedding process.
+2025-08-11 20:29:39 - app - INFO - Set status to PROCESSING for Document ID: 323a1a64-b907-4f2d-ab7a-5a09f411805a
+2025-08-11 20:29:46 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 323a1a64-b907-4f2d-ab7a-5a09f411805a
+2025-08-11 20:32:12 - app - INFO - Document created: c5764a1d-25e0-4e4f-ab71-b87721894f36. Triggering embedding process.
+2025-08-11 20:32:12 - app - INFO - Set status to PROCESSING for Document ID: c5764a1d-25e0-4e4f-ab71-b87721894f36
+2025-08-11 20:33:33 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: c5764a1d-25e0-4e4f-ab71-b87721894f36
+2025-08-11 20:39:40 - app - INFO - Document created: eabbf5fb-5644-4908-9a84-7ca68bd80f7d. Triggering embedding process.
+2025-08-11 20:39:40 - app - INFO - Set status to PROCESSING for Document ID: eabbf5fb-5644-4908-9a84-7ca68bd80f7d
+2025-08-11 20:39:50 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: eabbf5fb-5644-4908-9a84-7ca68bd80f7d
+2025-08-11 20:48:29 - app - INFO - Document created: 70117a22-97ce-48f8-9657-35e3ac7197f6. Triggering embedding process.
+2025-08-11 20:48:29 - app - INFO - Set status to PROCESSING for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6
+2025-08-11 20:49:06 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6

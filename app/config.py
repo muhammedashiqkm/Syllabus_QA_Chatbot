@@ -14,14 +14,10 @@ class Config:
         raise ValueError("No SECRET_KEY found in environment variables. This is required for security.")
 
     # --- ADDED ---
-    # Admin User Configuration
-    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME",'admin')
-    if not ADMIN_USERNAME:
-        raise ValueError("No ADMIN_USERNAME found in environment variables.")
-        
-    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD",'password')
-    if not ADMIN_PASSWORD:
-        raise ValueError("No ADMIN_PASSWORD found in environment variables.")
+    # Secret key required to register the first admin user
+    REGISTRATION_SECRET_KEY = os.getenv("REGISTRATION_SECRET_KEY")
+    if not REGISTRATION_SECRET_KEY:
+        raise ValueError("No REGISTRATION_SECRET_KEY found in environment variables.")
 
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")

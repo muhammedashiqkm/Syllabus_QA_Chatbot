@@ -3,8 +3,12 @@ import requests
 import io
 import pypdf
 import google.generativeai as genai
+import logging # --- ADDED ---
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from flask import current_app
+
+# --- ADDED: Get the logger instance configured in logging_config.py ---
+error_logger = logging.getLogger('error')
 
 # --- AI Model Configuration ---
 def configure_genai():
@@ -33,11 +37,12 @@ def get_pdf_text(pdf_url: str) -> str | None:
         return text.replace('\x00', '')
 
     except requests.exceptions.RequestException as e:
-        # Log this error properly in the route
-        print(f"Error downloading PDF: {e}")
+        # --- MODIFIED: Replaced print() with proper logging ---
+        error_logger.error(f"Error downloading PDF from {pdf_url}: {e}")
         return None
     except Exception as e:
-        print(f"Error processing PDF: {e}")
+        # --- MODIFIED: Replaced print() with proper logging ---
+        error_logger.error(f"Error processing PDF from {pdf_url}: {e}")
         return None
 
 
@@ -70,7 +75,8 @@ def get_embeddings_batch(texts: list[str]) -> list[list[float]] | None:
         )
         return result['embedding']
     except Exception as e:
-        print(f"Error getting batch embedding: {e}")
+        # --- MODIFIED: Replaced print() with proper logging ---
+        error_logger.error(f"Error getting batch embedding from GenAI: {e}", exc_info=True)
         return None
 
 def get_single_embedding(text: str) -> list[float] | None:
@@ -87,7 +93,8 @@ def get_single_embedding(text: str) -> list[float] | None:
         )
         return result['embedding']
     except Exception as e:
-        print(f"Error getting single embedding: {e}")
+        # --- MODIFIED: Replaced print() with proper logging ---
+        error_logger.error(f"Error getting single embedding from GenAI: {e}", exc_info=True)
         return None
 
 

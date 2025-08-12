@@ -1,21 +1,22 @@
 import uuid
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import UniqueConstraint
 
 db = SQLAlchemy()
 
-# ... (User, Syllabus, ClassModel, Subject models are unchanged) ...
-
 class User(db.Model):
-    """Represents a regular end-user for the chat API."""
+    """Represents a user for the API and potentially the admin panel."""
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     username = Column(String(80), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
+    # --- ADDED ---
+    is_admin = Column(Boolean, default=False, nullable=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -51,7 +52,6 @@ class Document(db.Model):
     source_url = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # --- NEW FIELDS ---
     processing_status = Column(String(20), default='PENDING', nullable=False)
     processing_time_ms = Column(Integer, nullable=True)
     
@@ -62,6 +62,12 @@ class Document(db.Model):
     syllabus = db.relationship("Syllabus")
     class_model = db.relationship("ClassModel")
     subject = db.relationship("Subject")
+
+    __table_args__ = (
+        UniqueConstraint('syllabus_id', 'class_id', 'subject_id', name='_syllabus_class_subject_uc'),
+    )
+
+    chunks = db.relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
     
     def __str__(self):
         return f"{self.subject.name} - {self.class_model.name} ({self.syllabus.name})"
