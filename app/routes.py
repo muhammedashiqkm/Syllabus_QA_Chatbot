@@ -81,6 +81,33 @@ def login():
     security_logger.warning(f"Failed login attempt for username: {data['username']}")
     raise ApiError("Invalid username or password", 401)
 
+
+@api_bp.route("/categories", methods=["GET"])
+@jwt_required() # <-- ADD THIS DECORATOR
+def get_categories():
+    """
+    Provides a complete list of all available syllabuses, classes, and subjects.
+    Requires authentication.
+    """ # <-- UPDATE THE DOCSTRING
+    try:
+        # Query each table and get a sorted list of names
+        syllabuses = [s.name for s in Syllabus.query.order_by(Syllabus.name).all()]
+        classes = [c.name for c in ClassModel.query.order_by(ClassModel.name).all()]
+        subjects = [s.name for s in Subject.query.order_by(Subject.name).all()]
+
+        response = {
+            "syllabuses": syllabuses,
+            "classes": classes,
+            "subjects": subjects
+        }
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        # Log the error in case the database query fails
+        error_logger.error(f"Error in /categories: {e}", exc_info=True)
+        raise ApiError("An internal error occurred while fetching categories.", 500)
+
 # --- Chat Endpoints ---
 
 @api_bp.route("/chat", methods=["POST"])

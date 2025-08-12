@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yaml
+
+# Python virtual environment
+.venv
+venv
+__pycache__
+
+# Environment variables
+.env
+
+# Logs and other generated files
+logs
+*.pyc
+*.log
+
+# IDE files
+.vscode/
+.idea/

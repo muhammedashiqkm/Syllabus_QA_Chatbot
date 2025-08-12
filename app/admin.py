@@ -156,6 +156,7 @@ class AdminLogoutView(AuthMixin, BaseView):
 class DocumentView(AdminModelView):
     """Custom view for the Document model in the admin panel."""
     column_list = ['id', 'subject', 'processing_status', 'processing_error', 'processing_time_ms', 'created_at']
+    form_excluded_columns = ['chunks']
     column_searchable_list = ['source_url', 'subject.name', 'class_model.name', 'syllabus.name']
     column_filters = ['processing_status', 'subject', 'class_model', 'syllabus', 'created_at']
     column_formatters = {
