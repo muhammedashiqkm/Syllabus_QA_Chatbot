@@ -15,6 +15,12 @@ security_logger = logging.getLogger('security')
 # Create a Blueprint
 api_bp = Blueprint('api', __name__)
 
+
+@api_bp.route("/health", methods=["GET"])
+def health_check():
+    """Health check endpoint for Docker."""
+    return jsonify({"status": "healthy"}), 200
+
 # --- Authentication Endpoints ---
 
 @api_bp.route("/register", methods=["POST"])

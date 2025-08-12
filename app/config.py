@@ -25,7 +25,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # RATELIMIT_STORAGE_URI
-    RATELIMIT_STORAGE_URI = os.getenv("LIMITER_STORAGE_URI")
+    RATELIMIT_STORAGE_URI = os.getenv("LIMITER_STORAGE_URI","memcached://memcached:11211")
     
     # RATELIMIT_STORAGE_URI
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")

@@ -1,22 +1,32 @@
+version: '3.8'
+
 services:
-  web:
-    build: .
-    container_name: chatbot_api_prod
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot_api
+    restart: unless-stopped
+    depends_on:
+      - memcached
     ports:
       - "5000:5000"
     env_file:
       - .env
     volumes:
-      - ./logs:/app/logs
-    command: gunicorn --workers 3 --bind 0.0.0.0:5000 "app:create_app()"
-    depends_on:
-      - redis
+      - app-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  redis:
-    image: redis:7-alpine
-    container_name: chatbot_redis_prod
-    expose:
-      - "6379"
+  memcached:
+    image: memcached:1.6-alpine
+    container_name: chatbot_memcache
+    restart: unless-stopped
 
-
-volumes: {}
+volumes:
+  app-logs:
+    driver: local
