@@ -13,7 +13,6 @@ class Config:
     if not SECRET_KEY:
         raise ValueError("No SECRET_KEY found in environment variables. This is required for security.")
 
-    # --- ADDED ---
     # Secret key required to register the first admin user
     REGISTRATION_SECRET_KEY = os.getenv("REGISTRATION_SECRET_KEY")
     if not REGISTRATION_SECRET_KEY:
@@ -24,7 +23,13 @@ class Config:
     if not SQLALCHEMY_DATABASE_URI:
         raise ValueError("No DATABASE_URL found in environment variables")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
+    
+    # RATELIMIT_STORAGE_URI
+    RATELIMIT_STORAGE_URI = os.getenv("LIMITER_STORAGE_URI")
+    
+    # RATELIMIT_STORAGE_URI
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
+    
     # Google API Key
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     if not GOOGLE_API_KEY:

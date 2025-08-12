@@ -4,9 +4,9 @@ from flask import current_app, flash, request, redirect, url_for, session, rende
 from flask_admin import Admin, AdminIndexView, BaseView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.model.template import macro
-from app.models import db, Syllabus, ClassModel, Subject, Document, User
+from sqlalchemy import inspect # <-- ADDED THIS IMPORT
+from app.models import db, Syllabus, ClassModel, Subject, Document, User, DocumentChunk
 from app import utils
-from sqlalchemy.exc import IntegrityError # Import the specific exception
 
 # Get logger instances
 app_logger = logging.getLogger('app')
@@ -14,6 +14,7 @@ error_logger = logging.getLogger('error')
 security_logger = logging.getLogger('security')
 
 # --- Login Template ---
+# (This section remains unchanged)
 LOGIN_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -53,6 +54,7 @@ LOGIN_TEMPLATE = """
 
 def process_document_embedding(document_id, app_context):
     """The background task for processing a document."""
+    # (This function remains unchanged)
     with app_context:
         start_time = time.time()
         doc = None
@@ -82,7 +84,6 @@ def process_document_embedding(document_id, app_context):
                 raise ValueError("Failed to generate embeddings from the AI model.")
 
             # 4. Create and Save DocumentChunk Objects
-            from app.models import DocumentChunk
             chunks_to_add = [
                 DocumentChunk(document_id=doc.id, content=content, embedding=embeddings[i])
                 for i, content in enumerate(text_chunks)
@@ -107,23 +108,18 @@ def process_document_embedding(document_id, app_context):
                 app_logger.error(f"Status set to FAILED for Document ID: {doc.id}")
 
 
-# --- MODIFIED: Session-based authentication views ---
-
+# --- Session-based authentication views ---
+# (These classes remain unchanged: AuthMixin, AdminModelView, MyAdminIndexView, AdminLoginView, AdminLogoutView)
 class AuthMixin:
-    """Mixin for session-based authentication in admin views."""
     def is_accessible(self):
         return session.get('admin_logged_in') is True
-
     def inaccessible_callback(self, name, **kwargs):
-        # Redirect to login page if user is not authenticated
         return redirect(url_for('admin_login.index'))
 
 class AdminModelView(AuthMixin, ModelView):
-    """ Custom ModelView to enforce session-based auth. """
     pass
 
 class MyAdminIndexView(AuthMixin, AdminIndexView):
-    """ Custom AdminIndexView to enforce session-based auth. """
     pass
 
 class AdminLoginView(BaseView):
@@ -132,10 +128,7 @@ class AdminLoginView(BaseView):
         if request.method == 'POST':
             username = request.form.get('username')
             password = request.form.get('password')
-
-            # Find the admin user in the database
             admin_user = User.query.filter_by(username=username, is_admin=True).first()
-
             if admin_user and admin_user.check_password(password):
                 session['admin_logged_in'] = True
                 session['admin_user'] = username
@@ -145,11 +138,8 @@ class AdminLoginView(BaseView):
             else:
                 security_logger.warning(f"Failed admin login attempt for username: {username}")
                 flash('Invalid username or password.', 'error')
-
         return render_template_string(LOGIN_TEMPLATE)
-
     def is_visible(self):
-        # This view should not be visible in the menu
         return False
 
 class AdminLogoutView(AuthMixin, BaseView):
@@ -165,63 +155,51 @@ class AdminLogoutView(AuthMixin, BaseView):
 
 class DocumentView(AdminModelView):
     """Custom view for the Document model in the admin panel."""
-    column_list = ['id', 'subject', 'processing_status', 'processing_time_ms', 'created_at']
+    column_list = ['id', 'subject', 'processing_status', 'processing_error', 'processing_time_ms', 'created_at']
     column_searchable_list = ['source_url', 'subject.name', 'class_model.name', 'syllabus.name']
     column_filters = ['processing_status', 'subject', 'class_model', 'syllabus', 'created_at']
     column_formatters = {
         'processing_time_ms': macro('render_processing_time')
     }
-
     list_template = 'admin/document_list.html'
 
-    # This method now handles the unique constraint error and flashes the concise message.
-    def create_model(self, form):
+    def on_model_change(self, form, model, is_created):
         """
-            Custom create_model to handle unique constraint violations.
+        This function is called when a document is created or updated.
+        It handles the initial processing and re-processing if the source URL changes.
         """
-        try:
-            model = self.model()
-            form.populate_obj(model)
-            self.session.add(model)
-            self._on_model_change(form, model, True)
-            self.session.commit()
-            return model
-        except IntegrityError as e:
-            # Check if it's our specific unique constraint error
-            if "_syllabus_class_subject_uc" in str(e.orig):
-                self.session.rollback()
-                flash('Creation Failed: A document with the same combination of Syllabus, Class, and Subject already exists.', 'error')
-                return False
-            else:
-                # If it's a different integrity error, raise it
-                raise e
-        except Exception as ex:
-            if not self.handle_view_exception(ex):
-                flash(f'Failed to create model. {ex}', 'error')
-            self.session.rollback()
-            return False
+        # Use SQLAlchemy's inspection tools to see if the 'source_url' was changed
+        history = inspect(model).get_history('source_url', True)
+        url_changed = history.has_changes()
 
-    def after_model_change(self, form, model, is_created):
-        """This function is called after a new document is created via the admin panel."""
-        # The check for is_created is now more robust because create_model can return False
-        if is_created and model:
-            app_logger.info(f"Document created: {model.id}. Triggering embedding process.")
+        # We trigger processing if it's a new document OR if the URL has been updated.
+        if is_created or url_changed:
+            
+            # If the URL was changed on an existing document, we must delete the old chunks.
+            if url_changed and not is_created:
+                app_logger.info(f"Source URL changed for Document ID: {model.id}. Deleting old chunks.")
+                
+                # Delete all existing chunks associated with this document
+                DocumentChunk.query.filter_by(document_id=model.id).delete()
+                
+                # Commit the deletion
+                db.session.commit() 
+                
+                flash(f"Source URL updated. Old document data cleared. Starting re-processing for {model.id}.", 'info')
+
+            # This part runs for both creation and URL updates
+            app_logger.info(f"Triggering embedding process for Document ID: {model.id}.")
             executor = current_app.config['EXECUTOR']
             app_context = current_app.app_context()
             executor.submit(process_document_embedding, model.id, app_context)
-            flash(f"Document processing has started for {model.id}. Refresh to see status updates.", 'info')
+            flash(f"Document processing has started for {model.id}. Refresh to see status updates.", 'success')
 
 def setup_admin(app):
     """Initializes the admin panel."""
     admin = Admin(app, name='Chatbot Admin', template_mode='bootstrap3', index_view=MyAdminIndexView(url="/admin"))
-
-    # Add model views
     admin.add_view(AdminModelView(Syllabus, db.session, category="Content Management"))
     admin.add_view(AdminModelView(ClassModel, db.session, name="Classes", category="Content Management"))
     admin.add_view(AdminModelView(Subject, db.session, category="Content Management"))
     admin.add_view(DocumentView(Document, db.session, category="Content Management"))
-    admin.add_view(AdminModelView(User, db.session, category="User Management")) # Added User management to admin
-
-    # Add auth views
     admin.add_view(AdminLoginView(name='Login', endpoint='admin_login'))
     admin.add_view(AdminLogoutView(name='Logout', endpoint='logout'))

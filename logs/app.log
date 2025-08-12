@@ -1024,3 +1024,118 @@ KeyError: 'ADMIN_USERNAME'
 2025-08-11 20:48:29 - app - INFO - Document created: 70117a22-97ce-48f8-9657-35e3ac7197f6. Triggering embedding process.
 2025-08-11 20:48:29 - app - INFO - Set status to PROCESSING for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6
 2025-08-11 20:49:06 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6
+2025-08-12 10:55:40 - app - INFO - Document created: 4cdb8c32-69eb-4b33-b5b4-8495d7d34423. Triggering embedding process.
+2025-08-12 10:55:40 - app - INFO - Set status to PROCESSING for Document ID: 4cdb8c32-69eb-4b33-b5b4-8495d7d34423
+2025-08-12 10:55:43 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 4cdb8c32-69eb-4b33-b5b4-8495d7d34423
+2025-08-12 11:15:05 - app - INFO - Source URL changed for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6. Deleting old chunks.
+2025-08-12 11:15:05 - app - INFO - Triggering embedding process for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6.
+2025-08-12 11:15:05 - app - INFO - Set status to PROCESSING for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6
+2025-08-12 11:15:10 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6
+2025-08-12 11:18:45 - app - ERROR - Exception on /admin/ [GET]
+Traceback (most recent call last):
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_admin\base.py", line 69, in inner
+    return self._run_view(f, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_admin\base.py", line 369, in _run_view
+    return fn(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_admin\base.py", line 455, in index
+    return self.render(self._template)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_admin\base.py", line 308, in render
+    return render_template(template, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\jinja2\environment.py", line 1304, in render
+    self.environment.handle_exception()
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\jinja2\environment.py", line 939, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_admin\templates\bootstrap3\admin\index.html", line 1, in top-level template code
+    {% extends 'admin/master.html' %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_admin\templates\bootstrap3\admin\master.html", line 1, in top-level template code
+    {% extends admin_base_template %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\templating.py", line 64, in get_source
+    return self._get_source_fast(environment, template)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\templating.py", line 98, in _get_source_fast
+    raise TemplateNotFound(template)
+jinja2.exceptions.TemplateNotFound: admin/custom_base.html
+2025-08-12 11:23:02 - app - ERROR - Exception on /admin/ [GET]
+Traceback (most recent call last):
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_admin\base.py", line 65, in inner
+    abort = self._handle_view(f.__name__, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_admin\base.py", line 353, in _handle_view
+    if not self.is_accessible():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Meshilogic\Syllabus_QA_Chatbot\Syllabus_QA_Chatbot\app\admin.py", line 96, in is_accessible
+    return current_user.is_authenticated and current_user.is_admin
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\local.py", line 311, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\local.py", line 515, in _get_current_object
+    return get_name(local())
+                    ^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_login\utils.py", line 25, in <lambda>
+    current_user = LocalProxy(lambda: _get_user())
+                                      ^^^^^^^^^^^
+  File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_login\utils.py", line 372, in _get_user
+    current_app.login_manager._load_user()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Flask' object has no attribute 'login_manager'
+2025-08-12 11:30:06 - app - INFO - Source URL changed for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6. Deleting old chunks.
+2025-08-12 11:30:06 - app - INFO - Triggering embedding process for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6.
+2025-08-12 11:30:06 - app - INFO - Set status to PROCESSING for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6
+2025-08-12 11:31:36 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 70117a22-97ce-48f8-9657-35e3ac7197f6
+2025-08-12 11:42:40 - app - INFO - Triggering embedding process for Document ID: None.
+2025-08-12 11:53:36 - app - INFO - Triggering embedding process for Document ID: None.
+2025-08-12 11:54:32 - app - INFO - Source URL changed for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce. Deleting old chunks.
+2025-08-12 11:54:32 - app - INFO - Triggering embedding process for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce.
+2025-08-12 11:54:33 - app - INFO - Set status to PROCESSING for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce
+2025-08-12 11:54:33 - app - ERROR - Status set to FAILED for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce
+2025-08-12 11:58:01 - app - INFO - Source URL changed for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce. Deleting old chunks.
+2025-08-12 11:58:02 - app - INFO - Triggering embedding process for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce.
+2025-08-12 11:58:02 - app - INFO - Set status to PROCESSING for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce
+2025-08-12 11:58:13 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce
+2025-08-12 12:12:39 - app - INFO - Source URL changed for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce. Deleting old chunks.
+2025-08-12 12:12:39 - app - INFO - Triggering embedding process for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce.
+2025-08-12 12:12:39 - app - INFO - Set status to PROCESSING for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce
+2025-08-12 12:12:44 - app - INFO - Successfully processed. Status set to COMPLETED for Document ID: 7c073c4c-6868-4e20-accf-cee5566938ce

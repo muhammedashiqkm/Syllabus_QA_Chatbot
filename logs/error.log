@@ -731,3 +731,11 @@ Traceback (most recent call last):
   File "C:\Users\ashiq\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\sessions.py", line 97, in _fail
     raise RuntimeError(
 RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2025-08-12 11:42:40 - error - ERROR - Document with ID None not found for embedding.
+2025-08-12 11:53:36 - error - ERROR - Document with ID None not found for embedding.
+2025-08-12 11:54:33 - error - ERROR - Error processing PDF from https://www.drishtiias.com: Stream has ended unexpectedly
+2025-08-12 11:54:33 - error - CRITICAL - Critical error in embedding background task for doc 7c073c4c-6868-4e20-accf-cee5566938ce: Could not extract text from PDF. Check URL and PDF format.
+Traceback (most recent call last):
+  File "D:\Meshilogic\Syllabus_QA_Chatbot\Syllabus_QA_Chatbot\app\admin.py", line 76, in process_document_embedding
+    raise ValueError("Could not extract text from PDF. Check URL and PDF format.")
+ValueError: Could not extract text from PDF. Check URL and PDF format.

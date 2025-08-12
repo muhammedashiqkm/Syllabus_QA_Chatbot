@@ -6,7 +6,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import ValidationError
 from concurrent.futures import ThreadPoolExecutor
-from flask_migrate import Migrate # --- ADDED ---
+from flask_migrate import Migrate
+from flask_cors import CORS
 
 from app.config import Config
 from app.models import db, User
@@ -17,7 +18,7 @@ from app.admin import setup_admin
 # Initialize extensions
 jwt = JWTManager()
 limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
-migrate = Migrate() # --- ADDED ---
+migrate = Migrate() 
 
 def create_app():
     """Application factory function."""
@@ -40,6 +41,7 @@ def create_app():
     # --- Register Blueprints ---
     from app.routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
+    CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS")}})
 
     # --- CLI Commands ---
     @app.cli.command("create-user")

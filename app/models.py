@@ -15,7 +15,6 @@ class User(db.Model):
     id = Column(Integer, primary_key=True)
     username = Column(String(80), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    # --- ADDED ---
     is_admin = Column(Boolean, default=False, nullable=False)
 
     def set_password(self, password):
@@ -45,6 +44,8 @@ class Subject(db.Model):
     def __str__(self):
         return self.name
 
+# In models.py
+
 class Document(db.Model):
     """Represents a single PDF document, linked to categories."""
     __tablename__ = "documents"
@@ -54,6 +55,7 @@ class Document(db.Model):
     
     processing_status = Column(String(20), default='PENDING', nullable=False)
     processing_time_ms = Column(Integer, nullable=True)
+    processing_error = Column(Text, nullable=True) # <-- ADD THIS LINE
     
     syllabus_id = Column(Integer, ForeignKey("syllabuses.id"), nullable=False)
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
@@ -62,6 +64,15 @@ class Document(db.Model):
     syllabus = db.relationship("Syllabus")
     class_model = db.relationship("ClassModel")
     subject = db.relationship("Subject")
+
+    __table_args__ = (
+        UniqueConstraint('syllabus_id', 'class_id', 'subject_id', name='_syllabus_class_subject_uc'),
+    )
+
+    chunks = db.relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
+    
+    def __str__(self):
+        return f"{self.subject.name} - {self.class_model.name} ({self.syllabus.name})"
 
     __table_args__ = (
         UniqueConstraint('syllabus_id', 'class_id', 'subject_id', name='_syllabus_class_subject_uc'),
