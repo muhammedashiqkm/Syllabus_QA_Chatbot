@@ -5,9 +5,10 @@ import os
 def setup_logging():
     """Configures logging for the application."""
     
-    # Create logs directory if it doesn't exist
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
+    log_directory = 'app/logs'
+
+    # Create logs directory inside 'app' folder if it doesn't exist
+    os.makedirs(log_directory, exist_ok=True)
 
     # --- Formatter ---
     # A consistent format for all log messages
@@ -17,18 +18,17 @@ def setup_logging():
     )
 
     # --- Handlers ---
-    # Define file handlers with rotation to prevent large log files
-    # maxBytes=10MB, backupCount=5 means up to 6 files (1 current + 5 backups) of 10MB each
-    app_handler = RotatingFileHandler('logs/app.log', maxBytes=10485760, backupCount=5)
+    # Define file handlers with the new path
+    app_handler = RotatingFileHandler(f'{log_directory}/app.log', maxBytes=10485760, backupCount=5)
     app_handler.setFormatter(formatter)
 
-    error_handler = RotatingFileHandler('logs/error.log', maxBytes=10485760, backupCount=5)
+    error_handler = RotatingFileHandler(f'{log_directory}/error.log', maxBytes=10485760, backupCount=5)
     error_handler.setFormatter(formatter)
 
-    access_handler = RotatingFileHandler('logs/access.log', maxBytes=10485760, backupCount=5)
+    access_handler = RotatingFileHandler(f'{log_directory}/access.log', maxBytes=10485760, backupCount=5)
     access_handler.setFormatter(formatter)
     
-    security_handler = RotatingFileHandler('logs/security.log', maxBytes=10485760, backupCount=5)
+    security_handler = RotatingFileHandler(f'{log_directory}/security.log', maxBytes=10485760, backupCount=5)
     security_handler.setFormatter(formatter)
 
     # --- Loggers ---

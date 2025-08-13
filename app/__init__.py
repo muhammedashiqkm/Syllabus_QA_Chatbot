@@ -17,7 +17,11 @@ from app.admin import setup_admin
 
 # Initialize extensions
 jwt = JWTManager()
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=Config.RATELIMIT_STORAGE_URI
+)
 migrate = Migrate() 
 
 def create_app():
@@ -27,6 +31,7 @@ def create_app():
 
     app = Flask(__name__)
     app.config.from_object(Config)
+    
 
     # Configure a simple thread pool for background tasks
     app.config['EXECUTOR'] = ThreadPoolExecutor(max_workers=2)
@@ -57,6 +62,11 @@ def create_app():
         db.session.add(new_user)
         db.session.commit()
         print(f"User '{username}' created successfully.")
+
+    @app.route("/health")
+    def health():
+        return {"status": "ok"}, 200
+
 
     # --- Request Logging ---
     @app.before_request

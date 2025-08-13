@@ -24,10 +24,12 @@ class Config:
         raise ValueError("No DATABASE_URL found in environment variables")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # RATELIMIT_STORAGE_URI
-    RATELIMIT_STORAGE_URI = os.getenv("LIMITER_STORAGE_URI","memcached://memcached:11211")
+    #Rate Limiter Storage URI 
+    RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memcached://memcached:11211")
+    if not RATELIMIT_STORAGE_URI:
+        raise ValueError("No RATELIMIT_STORAGE_URI found in environment variables.")
     
-    # RATELIMIT_STORAGE_URI
+
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
     
     # Google API Key
