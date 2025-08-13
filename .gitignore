@@ -1,6 +1,7 @@
 # Environment Variables
 # Never commit your .env file which contains secrets!
 .env
+logs/
 
 # Virtual Environment
 # Ignores common virtual environment folders
