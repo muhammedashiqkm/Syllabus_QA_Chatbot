@@ -203,7 +203,7 @@ def setup_admin(app):
     """Initializes the admin panel."""
     admin = Admin(app, name='Chatbot Admin', template_mode='bootstrap3', index_view=MyAdminIndexView(url="/admin"))
     admin.add_view(AdminModelView(Syllabus, db.session, category="Content Management"))
-    admin.add_view(AdminModelV(ClassModel, db.session, name="Classes", category="Content Management"))
+    admin.add_view(AdminModelView(ClassModel, db.session, name="Classes", category="Content Management"))
     admin.add_view(AdminModelView(Subject, db.session, category="Content Management"))
     admin.add_view(DocumentView(Document, db.session, category="Content Management"))
     admin.add_view(AdminLoginView(name='Login', endpoint='admin_login'))
