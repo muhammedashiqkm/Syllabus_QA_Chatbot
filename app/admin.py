@@ -163,7 +163,6 @@ class DocumentView(AdminModelView):
         """
         Override create_model to pre-emptively check for duplicates before saving.
         """
-        # --- Step 1: Check for duplicates before attempting to save ---
         existing_doc = Document.query.filter_by(
             syllabus=form.syllabus.data,
             class_model=form.class_model.data,
@@ -172,54 +171,69 @@ class DocumentView(AdminModelView):
 
         if existing_doc:
             self._flash_duplicate_error()
-            return False # Stop processing
+            return False
 
-        # --- Step 2: If no duplicate, proceed with creation ---
         return super().create_model(form)
 
     def update_model(self, form, model):
         """
-        Override update_model to pre-emptively check for duplicates before saving.
+        Override update_model to check for duplicates and handle URL changes explicitly.
         """
-        # --- Step 1: Check if the new combination conflicts with another document ---
+        # --- MODIFICATION START: Simplified and more reliable logic ---
+
+        # 1. Check for duplicate conflicts before doing anything else
         existing_doc = Document.query.filter_by(
             syllabus=form.syllabus.data,
             class_model=form.class_model.data,
             subject=form.subject.data
         ).first()
 
-        # A conflict exists if a document was found AND its ID is different from the current one
         if existing_doc and existing_doc.id != model.id:
             self._flash_duplicate_error()
-            return False # Stop processing
+            return False
 
-        # --- Step 2: If no duplicate, proceed with the update ---
-        return super().update_model(form, model)
+        # 2. Check if the URL is about to be changed
+        url_changed = form.source_url.data != model.source_url
 
-    def after_model_change(self, form, model, is_created):
-        """
-        This hook runs AFTER the commit is successful, so model.id is always valid.
-        Its job is to trigger the background processing.
-        """
-        # Check if the source_url was changed during an update
-        url_changed = False
-        if not is_created:
-            history = inspect(model).get_history('source_url', True)
-            if history.has_changes():
-                url_changed = True
+        # 3. Save the changes from the form to the model object
+        form.populate_obj(model)
 
-        # Trigger processing for new documents or when the URL changes
-        if is_created or url_changed:
-            if url_changed:
-                app_logger.info(f"Source URL changed for Document ID: {model.id}. Deleting old chunks.")
-                DocumentChunk.query.filter_by(document_id=model.id).delete()
-                db.session.commit()
-                flash("Source URL updated. Old document data cleared. Starting re-processing.", 'info')
+        # 4. If the URL changed, perform the special logic
+        if url_changed:
+            app_logger.info(f"Source URL changed for Document ID: {model.id}. Deleting old chunks.")
+            DocumentChunk.query.filter_by(document_id=model.id).delete()
+            
+            # Commit the changes (including chunk deletion)
+            self.session.commit()
 
-            app_logger.info(f"Triggering embedding process for Document ID: {model.id}.")
+            # Trigger the background task for re-processing
+            app_logger.info(f"Triggering re-embedding process for Document ID: {model.id}.")
             executor = current_app.config['EXECUTOR']
             app_context = current_app.app_context()
             executor.submit(process_document_embedding, model.id, app_context)
+
+            # Flash the specific message for URL updates
+            flash("Source URL updated. Old document data cleared. Starting re-processing.", 'info')
+        
+        # 5. If the URL did NOT change, just commit the other changes
+        else:
+            self.session.commit()
+
+        return True 
+        
+
+    def after_model_change(self, form, model, is_created):
+        """
+        This hook now ONLY handles new document creation.
+        """
+        if is_created:
+            # Start the background processing task
+            app_logger.info(f"Triggering embedding process for new Document ID: {model.id}.")
+            executor = current_app.config['EXECUTOR']
+            app_context = current_app.app_context()
+            executor.submit(process_document_embedding, model.id, app_context)
+
+            # Flash the message for new documents
             flash(f"Document processing has started for {model.id}. Refresh to see status updates.", 'success')
 
 
