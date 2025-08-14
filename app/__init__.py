@@ -19,7 +19,7 @@ from app.admin import setup_admin
 jwt = JWTManager()
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
+
     storage_uri=Config.RATELIMIT_STORAGE_URI
 )
 migrate = Migrate() 

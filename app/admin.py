@@ -4,7 +4,7 @@ from flask import current_app, flash, request, redirect, url_for, session, rende
 from flask_admin import Admin, AdminIndexView, BaseView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.model.template import macro
-from sqlalchemy import inspect # <-- ADDED THIS IMPORT
+from sqlalchemy import inspect
 from app.models import db, Syllabus, ClassModel, Subject, Document, User, DocumentChunk
 from app import utils
 
@@ -14,7 +14,6 @@ error_logger = logging.getLogger('error')
 security_logger = logging.getLogger('security')
 
 # --- Login Template ---
-# (This section remains unchanged)
 LOGIN_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -54,7 +53,6 @@ LOGIN_TEMPLATE = """
 
 def process_document_embedding(document_id, app_context):
     """The background task for processing a document."""
-    # (This function remains unchanged)
     with app_context:
         start_time = time.time()
         doc = None
@@ -109,7 +107,6 @@ def process_document_embedding(document_id, app_context):
 
 
 # --- Session-based authentication views ---
-# (These classes remain unchanged: AuthMixin, AdminModelView, MyAdminIndexView, AdminLoginView, AdminLogoutView)
 class AuthMixin:
     def is_accessible(self):
         return session.get('admin_logged_in') is True
@@ -176,6 +173,13 @@ class DocumentView(AdminModelView):
         # We trigger processing if it's a new document OR if the URL has been updated.
         if is_created or url_changed:
             
+            # --- MODIFICATION START ---
+            # If creating a new document, flush the session to get the auto-generated ID.
+            # This ensures model.id is available before triggering the background task.
+            if is_created:
+                db.session.flush()
+            # --- MODIFICATION END ---
+            
             # If the URL was changed on an existing document, we must delete the old chunks.
             if url_changed and not is_created:
                 app_logger.info(f"Source URL changed for Document ID: {model.id}. Deleting old chunks.")
@@ -188,7 +192,7 @@ class DocumentView(AdminModelView):
                 
                 flash(f"Source URL updated. Old document data cleared. Starting re-processing for {model.id}.", 'info')
 
-            # This part runs for both creation and URL updates
+            # This part runs for both creation and URL updates, now with a guaranteed model.id
             app_logger.info(f"Triggering embedding process for Document ID: {model.id}.")
             executor = current_app.config['EXECUTOR']
             app_context = current_app.app_context()
@@ -199,7 +203,7 @@ def setup_admin(app):
     """Initializes the admin panel."""
     admin = Admin(app, name='Chatbot Admin', template_mode='bootstrap3', index_view=MyAdminIndexView(url="/admin"))
     admin.add_view(AdminModelView(Syllabus, db.session, category="Content Management"))
-    admin.add_view(AdminModelView(ClassModel, db.session, name="Classes", category="Content Management"))
+    admin.add_view(AdminModelV(ClassModel, db.session, name="Classes", category="Content Management"))
     admin.add_view(AdminModelView(Subject, db.session, category="Content Management"))
     admin.add_view(DocumentView(Document, db.session, category="Content Management"))
     admin.add_view(AdminLoginView(name='Login', endpoint='admin_login'))
