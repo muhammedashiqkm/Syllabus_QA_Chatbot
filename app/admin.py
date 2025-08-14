@@ -144,7 +144,7 @@ class AdminLogoutView(AuthMixin, BaseView):
 
 class DocumentView(AdminModelView):
     """Custom view for the Document model in the admin panel."""
-    column_list = ['id', 'syllabus', 'class_model', 'subject', 'processing_status', 'processing_time_ms', 'created_at']
+    column_list = ['id', 'syllabus', 'class_model', 'subject', 'processing_status','processing_error','processing_time_ms', 'created_at']
     form_excluded_columns = ['chunks', 'created_at', 'processing_status', 'processing_time_ms', 'processing_error']
     column_default_sort = ('created_at', True)
     column_searchable_list = ['source_url', 'subject.name', 'class_model.name', 'syllabus.name']

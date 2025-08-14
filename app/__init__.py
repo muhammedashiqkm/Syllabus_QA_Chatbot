@@ -1,6 +1,6 @@
 import logging
 import click
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect, url_for
 from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -63,9 +63,10 @@ def create_app():
         db.session.commit()
         print(f"User '{username}' created successfully.")
 
-    @app.route("/health")
-    def health():
-        return {"status": "ok"}, 200
+    @app.route("/")
+    def index():
+        """Redirects the base URL ('/') to the admin login page ('/admin')."""
+        return redirect(url_for('admin.index'))
 
 
     # --- Request Logging ---
