@@ -3,11 +3,10 @@ import requests
 import io
 import pypdf
 import google.generativeai as genai
-import logging # --- ADDED ---
+import logging
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from flask import current_app
 
-# --- ADDED: Get the logger instance configured in logging_config.py ---
 error_logger = logging.getLogger('error')
 
 # --- AI Model Configuration ---
@@ -37,11 +36,11 @@ def get_pdf_text(pdf_url: str) -> str | None:
         return text.replace('\x00', '')
 
     except requests.exceptions.RequestException as e:
-        # --- MODIFIED: Replaced print() with proper logging ---
+
         error_logger.error(f"Error downloading PDF from {pdf_url}: {e}")
         return None
     except Exception as e:
-        # --- MODIFIED: Replaced print() with proper logging ---
+        
         error_logger.error(f"Error processing PDF from {pdf_url}: {e}")
         return None
 
@@ -75,7 +74,6 @@ def get_embeddings_batch(texts: list[str]) -> list[list[float]] | None:
         )
         return result['embedding']
     except Exception as e:
-        # --- MODIFIED: Replaced print() with proper logging ---
         error_logger.error(f"Error getting batch embedding from GenAI: {e}", exc_info=True)
         return None
 
@@ -93,7 +91,6 @@ def get_single_embedding(text: str) -> list[float] | None:
         )
         return result['embedding']
     except Exception as e:
-        # --- MODIFIED: Replaced print() with proper logging ---
         error_logger.error(f"Error getting single embedding from GenAI: {e}", exc_info=True)
         return None
 

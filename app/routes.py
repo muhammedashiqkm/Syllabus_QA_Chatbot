@@ -16,15 +16,15 @@ security_logger = logging.getLogger('security')
 api_bp = Blueprint('api', __name__)
 
 
+# Health Check
 @api_bp.route("/health", methods=["GET"])
 def health_check():
     """Health check endpoint for Docker."""
     return jsonify({"status": "healthy"}), 200
 
 # --- Authentication Endpoints ---
-
 @api_bp.route("/register", methods=["POST"])
-@limiter.limit("5 per hour")
+@limiter.limit("10 per hour")
 def register():
     """
     User registration endpoint.
@@ -35,7 +35,6 @@ def register():
     except ValidationError as err:
         raise ApiError(f"Validation failed: {err.messages}", 400)
 
-    # --- MODIFIED: The core registration logic is changed below ---
 
     # Check for the registration secret
     if data['registration_secret'] != current_app.config['REGISTRATION_SECRET_KEY']:
@@ -88,13 +87,15 @@ def login():
     raise ApiError("Invalid username or password", 401)
 
 
+# --- Chat Endpoints ---
+
 @api_bp.route("/categories", methods=["GET"])
-@jwt_required() # <-- ADD THIS DECORATOR
+@jwt_required()
 def get_categories():
     """
     Provides a complete list of all available syllabuses, classes, and subjects.
     Requires authentication.
-    """ # <-- UPDATE THE DOCSTRING
+    """ 
     try:
         # Query each table and get a sorted list of names
         syllabuses = [s.name for s in Syllabus.query.order_by(Syllabus.name).all()]
@@ -114,7 +115,6 @@ def get_categories():
         error_logger.error(f"Error in /categories: {e}", exc_info=True)
         raise ApiError("An internal error occurred while fetching categories.", 500)
 
-# --- Chat Endpoints ---
 
 @api_bp.route("/chat", methods=["POST"])
 @jwt_required()

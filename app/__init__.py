@@ -19,7 +19,6 @@ from app.admin import setup_admin
 jwt = JWTManager()
 limiter = Limiter(
     key_func=get_remote_address,
-
     storage_uri=Config.RATELIMIT_STORAGE_URI
 )
 migrate = Migrate() 
@@ -40,7 +39,7 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     limiter.init_app(app)
-    migrate.init_app(app, db) # --- ADDED ---
+    migrate.init_app(app, db)
     setup_admin(app) # Setup the admin panel
 
     # --- Register Blueprints ---
