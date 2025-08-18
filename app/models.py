@@ -44,8 +44,6 @@ class Subject(db.Model):
     def __str__(self):
         return self.name
 
-# In models.py
-
 class Document(db.Model):
     """Represents a single PDF document, linked to categories."""
     __tablename__ = "documents"
@@ -80,9 +78,9 @@ class DocumentChunk(db.Model):
     __tablename__ = "document_chunks"
     id = Column(Integer, primary_key=True)
     content = Column(Text, nullable=False)
-    embedding = Column(Vector(768))
+    embedding = Column(Vector(768)) # The vector embedding
     document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False)
-    document = db.relationship("Document")
+    document = db.relationship("Document", back_populates="chunks")
 
 
 class ChatHistory(db.Model):

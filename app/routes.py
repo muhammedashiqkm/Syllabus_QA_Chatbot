@@ -15,7 +15,6 @@ security_logger = logging.getLogger('security')
 # Create a Blueprint
 api_bp = Blueprint('api', __name__)
 
-
 # Health Check
 @api_bp.route("/health", methods=["GET"])
 def health_check():
@@ -35,8 +34,6 @@ def register():
     except ValidationError as err:
         raise ApiError(f"Validation failed: {err.messages}", 400)
 
-
-    # Check for the registration secret
     if data['registration_secret'] != current_app.config['REGISTRATION_SECRET_KEY']:
         security_logger.warning(f"Invalid registration secret provided by IP: {request.remote_addr}")
         raise ApiError("Not authorized to perform this action.", 403)
@@ -46,11 +43,9 @@ def register():
         security_logger.warning(f"Registration attempt for existing username: {username}")
         raise ApiError("Username already exists.", 409)
 
-    # Create the new user
+    # --- MODIFIED: Logic to handle is_admin from the request is restored ---
     new_user = User(username=username)
     new_user.set_password(data['password'])
-    
-    # Set the admin status directly from the request data
     # The 'is_admin' field defaults to False if not provided, thanks to `load_default` in the schema
     new_user.is_admin = data['is_admin']
 
@@ -64,8 +59,6 @@ def register():
         security_logger.info(f"New user registered: {username}")
 
     return jsonify({"message": f"User '{username}' registered successfully."}), 201
-
-
 
 @api_bp.route("/login", methods=["POST"])
 @limiter.limit("10 per hour")
@@ -92,12 +85,8 @@ def login():
 @api_bp.route("/categories", methods=["GET"])
 @jwt_required()
 def get_categories():
-    """
-    Provides a complete list of all available syllabuses, classes, and subjects.
-    Requires authentication.
-    """ 
+    """Provides a complete list of all available syllabuses, classes, and subjects.""" 
     try:
-        # Query each table and get a sorted list of names
         syllabuses = [s.name for s in Syllabus.query.order_by(Syllabus.name).all()]
         classes = [c.name for c in ClassModel.query.order_by(ClassModel.name).all()]
         subjects = [s.name for s in Subject.query.order_by(Subject.name).all()]
@@ -107,11 +96,8 @@ def get_categories():
             "classes": classes,
             "subjects": subjects
         }
-        
         return jsonify(response)
-        
     except Exception as e:
-        # Log the error in case the database query fails
         error_logger.error(f"Error in /categories: {e}", exc_info=True)
         raise ApiError("An internal error occurred while fetching categories.", 500)
 
@@ -122,11 +108,7 @@ def chat():
     """Handles a chat question against a categorized document."""
     try:
         data = ChatSchema().load(request.get_json())
-    except ValidationError as err:
-        raise ApiError(f"Validation failed: {err.messages}", 400)
 
-    try:
-        # Find the document based on the provided categories
         document = db.session.query(Document).join(Syllabus).join(ClassModel).join(Subject).filter(
             Syllabus.name == data['syllabus'],
             ClassModel.name == data['class_name'], 
@@ -136,14 +118,12 @@ def chat():
         if not document:
             raise ApiError("Document matching the specified criteria not found.", 404)
 
-        # Fetch recent chat history
         recent_history = db.session.query(ChatHistory).filter(
             ChatHistory.chatbot_user_id == data['chatbot_user_id']
         ).order_by(ChatHistory.created_at.desc()).limit(10).all()
         recent_history.reverse()
         formatted_history = "\n".join([f"Human: {h.question}\nAI: {h.answer}" for h in recent_history])
 
-        # Find relevant chunks using vector search
         question_embedding = utils.get_single_embedding(data['question'])
         if not question_embedding:
             raise ApiError("Could not generate embedding for the question.", 500)
@@ -153,7 +133,6 @@ def chat():
         ).order_by(DocumentChunk.embedding.l2_distance(question_embedding)).limit(5).all()
         context = "\n".join([chunk.content for chunk in relevant_chunks])
         
-        # Generate the answer
         model, prompt_template = utils.get_conversational_chain()
         prompt = prompt_template.format(
             context=context,
@@ -164,7 +143,6 @@ def chat():
         response = model.generate_content(prompt)
         answer = response.text
         
-        # Save the new history entry
         history_entry = ChatHistory(
             chatbot_user_id=data['chatbot_user_id'],
             question=data['question'],
@@ -189,10 +167,6 @@ def clear_session():
     """Clears all chat history for a given chatbot session ID."""
     try:
         data = ClearSessionSchema().load(request.get_json())
-    except ValidationError as err:
-        raise ApiError(f"Validation failed: {err.messages}", 400)
-
-    try:
         num_deleted = ChatHistory.query.filter_by(chatbot_user_id=data["chatbot_user_id"]).delete()
         db.session.commit()
         

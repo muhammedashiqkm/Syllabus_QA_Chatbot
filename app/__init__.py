@@ -14,6 +14,7 @@ from app.models import db, User
 from app.logging_config import setup_logging
 from app.exceptions import ApiError
 from app.admin import setup_admin
+from app import utils
 
 # Initialize extensions
 jwt = JWTManager()
@@ -31,7 +32,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
-
     # Configure a simple thread pool for background tasks
     app.config['EXECUTOR'] = ThreadPoolExecutor(max_workers=2)
 
@@ -41,6 +41,10 @@ def create_app():
     limiter.init_app(app)
     migrate.init_app(app, db)
     setup_admin(app) # Setup the admin panel
+
+    # --- OPTIMIZATION: Configure GenAI client once on startup ---
+    with app.app_context():
+        utils.configure_genai()
 
     # --- Register Blueprints ---
     from app.routes import api_bp
@@ -56,17 +60,31 @@ def create_app():
         if User.query.filter_by(username=username).first():
             print(f"User '{username}' already exists.")
             return
-        new_user = User(username=username)
+        new_user = User(username=username, is_admin=False)
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
         print(f"User '{username}' created successfully.")
 
+    # --- ADDED: Secure CLI command to create an admin user ---
+    @app.cli.command("create-admin")
+    @click.argument("username")
+    @click.argument("password")
+    def create_admin(username, password):
+        """Creates a new admin user."""
+        if User.query.filter_by(username=username).first():
+            print(f"Admin user '{username}' already exists.")
+            return
+        new_user = User(username=username, is_admin=True)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        print(f"Admin user '{username}' created successfully.")
+
     @app.route("/")
     def index():
         """Redirects the base URL ('/') to the admin login page ('/admin')."""
         return redirect(url_for('admin.index'))
-
 
     # --- Request Logging ---
     @app.before_request
@@ -83,6 +101,4 @@ def create_app():
     def handle_marshmallow_validation(err):
         return jsonify({"error": "Validation failed", "messages": err.messages}), 400
     
-    # ... (other error handlers: 404, 500, 401, 429) remain the same
-
     return app
