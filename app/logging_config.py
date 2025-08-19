@@ -5,7 +5,7 @@ import os
 def setup_logging():
     """Configures logging for the application."""
     
-    log_directory = 'app/logs'
+    log_directory = 'logs'
 
     # Create logs directory inside 'app' folder if it doesn't exist
     os.makedirs(log_directory, exist_ok=True)
