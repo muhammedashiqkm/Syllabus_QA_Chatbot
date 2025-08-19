@@ -53,4 +53,3 @@ def setup_logging():
     security_logger = logging.getLogger('security')
     security_logger.setLevel(logging.INFO)
     security_logger.addHandler(security_handler)
-
