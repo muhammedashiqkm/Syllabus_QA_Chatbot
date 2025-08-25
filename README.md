@@ -73,8 +73,13 @@ The API base URL is `http://localhost:5000/api`. Protected endpoints require a `
     {
       "username": "api_user",
       "password": "a_strong_password",
-      "registration_secret": "the_secret_phrase_from_your_env"
+      "registration_secret": "the_secret_phrase_from_your_env",
+      "is_admin": "True/False"
     }
+    if is admin True accees to admin panel and create access_token
+    
+    else only create access_token
+
     ```
   * **Success Response (`201 Created`)**:
     ```json
