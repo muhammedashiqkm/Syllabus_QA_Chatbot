@@ -7,3 +7,7 @@ class ApiError(Exception):
 
     def to_dict(self):
         return {"error": self.message}
+    
+class ExternalApiError(Exception):
+    """Custom exception for failures related to external API calls."""
+    pass

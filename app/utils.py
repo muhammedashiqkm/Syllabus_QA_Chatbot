@@ -5,6 +5,7 @@ import pypdf
 import google.generativeai as genai
 import logging
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from app.exceptions import ExternalApiError
 from flask import current_app
 
 error_logger = logging.getLogger('error')
@@ -46,7 +47,7 @@ def get_text_chunks(text: str) -> list[str]:
     return chunks
 
 # --- AI Model Interactions ---
-def get_embeddings_batch(texts: list[str]) -> list[list[float]] | None:
+def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
     """Generates vector embeddings for a batch of texts using Google AI."""
     try:
         model_name = current_app.config.get("EMBEDDING_MODEL_NAME")
@@ -58,9 +59,10 @@ def get_embeddings_batch(texts: list[str]) -> list[list[float]] | None:
         return result['embedding']
     except Exception as e:
         error_logger.error(f"Error getting batch embedding from GenAI: {e}", exc_info=True)
-        return None
+        # Raise the custom exception instead of returning None
+        raise ExternalApiError("The embedding service failed.") from e
 
-def get_single_embedding(text: str) -> list[float] | None:
+def get_single_embedding(text: str) -> list[float]:
     """Generates a vector embedding for a single text query."""
     try:
         model_name = current_app.config.get("EMBEDDING_MODEL_NAME")
@@ -72,7 +74,8 @@ def get_single_embedding(text: str) -> list[float] | None:
         return result['embedding']
     except Exception as e:
         error_logger.error(f"Error getting single embedding from GenAI: {e}", exc_info=True)
-        return None
+        # Raise the custom exception instead of returning None
+        raise ExternalApiError("The embedding service failed.") from e
 
 def get_conversational_chain():
     """Creates the prompt template and loads the generative model for Q&A."""

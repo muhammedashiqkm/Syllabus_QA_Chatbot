@@ -4,7 +4,7 @@ from flask_jwt_extended import create_access_token, jwt_required
 from marshmallow import ValidationError
 from app.models import db, User, Document, DocumentChunk, ChatHistory, Syllabus, ClassModel, Subject
 from app.schemas import UserRegisterSchema, UserLoginSchema, ChatSchema, ClearSessionSchema
-from app.exceptions import ApiError
+from app.exceptions import ApiError, ExternalApiError
 from app import utils, limiter
 
 # Get logger instances
@@ -124,10 +124,11 @@ def chat():
         recent_history.reverse()
         formatted_history = "\n".join([f"Human: {h.question}\nAI: {h.answer}" for h in recent_history])
 
+        # This call can now raise ExternalApiError
         question_embedding = utils.get_single_embedding(data['question'])
-        if not question_embedding:
-            raise ApiError("Could not generate embedding for the question.", 500)
-
+        
+        # You can now remove the check for "if not question_embedding" as an exception will be raised instead.
+        
         relevant_chunks = DocumentChunk.query.filter(
             DocumentChunk.document_id == document.id
         ).order_by(DocumentChunk.embedding.l2_distance(question_embedding)).limit(5).all()
@@ -140,6 +141,7 @@ def chat():
             question=data['question']
         )
         
+        # This call can also raise an external API error
         response = model.generate_content(prompt)
         answer = response.text
         
@@ -152,6 +154,13 @@ def chat():
         db.session.commit()
         
         return jsonify({"answer": answer})
+    
+    # Add this new `except` block BEFORE the generic `Exception`
+    except ExternalApiError as e:
+        db.session.rollback()
+        error_logger.error(f"External API service failed: {e}", exc_info=True)
+        # Raise an ApiError with the 503 status code
+        raise ApiError("The service is temporarily unavailable. Please try again later.", 503)
 
     except Exception as e:
         db.session.rollback()
