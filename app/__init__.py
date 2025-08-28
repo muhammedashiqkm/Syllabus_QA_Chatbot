@@ -7,7 +7,6 @@ from flask_limiter.util import get_remote_address
 from marshmallow import ValidationError
 from flask_migrate import Migrate
 from flask_cors import CORS
-from flask_wtf.csrf import CSRFProtect
 
 from app.config import Config
 from app.models import db, User
@@ -22,7 +21,6 @@ limiter = Limiter(
     storage_uri=Config.RATELIMIT_STORAGE_URI
 )
 migrate = Migrate()
-csrf = CSRFProtect()
 
 def create_app():
     """Application factory function."""
@@ -32,21 +30,19 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # --- ADDED: Configure Celery with the Flask App Config ---
+    # Configure Celery with the Flask App Config
     from app.celery_worker import celery
     celery.conf.update(
         broker_url=app.config['CELERY_BROKER_URL'],
         result_backend=app.config['CELERY_RESULT_BACKEND']
     )
     celery.conf.update(app.config)
-    # ---------------------------------------------------------
 
     # Initialize extensions with the app object
     db.init_app(app)
     jwt.init_app(app)
     limiter.init_app(app)
     migrate.init_app(app, db)
-    csrf.init_app(app)
 
     # Local import to break the circle
     from app.admin import setup_admin
@@ -56,12 +52,12 @@ def create_app():
     with app.app_context():
         utils.configure_genai()
 
-    # --- Register Blueprints ---
+    # Register Blueprints
     from app.routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
     CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS")}})
 
-    # --- CLI Commands (no changes) ---
+    # CLI Commands
     @app.cli.command("create-user")
     @click.argument("username")
     @click.argument("password")
@@ -95,7 +91,7 @@ def create_app():
         """Redirects the base URL ('/') to the admin login page ('/admin')."""
         return redirect(url_for('admin.index'))
 
-    # --- Request Logging & Error Handlers (no changes) ---
+    # Request Logging & Error Handlers
     @app.before_request
     def log_request_info():
         if not request.path.startswith('/static'):
