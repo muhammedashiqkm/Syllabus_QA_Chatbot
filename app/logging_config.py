@@ -7,7 +7,7 @@ def setup_logging():
     
     log_directory = 'logs'
 
-    # Create logs directory inside 'app' folder if it doesn't exist
+    # Create logs directory if it doesn't exist
     os.makedirs(log_directory, exist_ok=True)
 
     # --- Formatter ---
@@ -18,7 +18,7 @@ def setup_logging():
     )
 
     # --- Handlers ---
-    # Define file handlers with the new path
+    # Define file handlers for rotating logs
     app_handler = RotatingFileHandler(f'{log_directory}/app.log', maxBytes=10485760, backupCount=5)
     app_handler.setFormatter(formatter)
 
@@ -32,7 +32,7 @@ def setup_logging():
     security_handler.setFormatter(formatter)
 
     # --- Loggers ---
-    # Get logger instances. These names can be used throughout the app.
+    # Get logger instances and attach the file handlers.
     
     # General application logger
     app_logger = logging.getLogger('app')

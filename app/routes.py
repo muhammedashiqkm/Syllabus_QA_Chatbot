@@ -25,10 +25,7 @@ def health_check():
 @api_bp.route("/register", methods=["POST"])
 @limiter.limit("10 per hour")
 def register():
-    """
-    User registration endpoint.
-    Allows creating a user and optionally setting them as an admin in the request.
-    """
+    """User registration endpoint."""
     try:
         data = UserRegisterSchema().load(request.get_json())
     except ValidationError as err:
@@ -43,21 +40,14 @@ def register():
         security_logger.warning(f"Registration attempt for existing username: {username}")
         raise ApiError("Username already exists.", 409)
 
-    # --- MODIFIED: Logic to handle is_admin from the request is restored ---
+   
     new_user = User(username=username)
     new_user.set_password(data['password'])
-    # The 'is_admin' field defaults to False if not provided, thanks to `load_default` in the schema
-    new_user.is_admin = data['is_admin']
 
     db.session.add(new_user)
     db.session.commit()
 
-    # Log the event based on whether an admin was created
-    if new_user.is_admin:
-        security_logger.critical(f"Admin user '{username}' created via API request.")
-    else:
-        security_logger.info(f"New user registered: {username}")
-
+    security_logger.info(f"New user registered: {username}")
     return jsonify({"message": f"User '{username}' registered successfully."}), 201
 
 @api_bp.route("/login", methods=["POST"])
@@ -124,10 +114,7 @@ def chat():
         recent_history.reverse()
         formatted_history = "\n".join([f"Human: {h.question}\nAI: {h.answer}" for h in recent_history])
 
-        # This call can now raise ExternalApiError
         question_embedding = utils.get_single_embedding(data['question'])
-        
-        # You can now remove the check for "if not question_embedding" as an exception will be raised instead.
         
         relevant_chunks = DocumentChunk.query.filter(
             DocumentChunk.document_id == document.id
@@ -141,7 +128,6 @@ def chat():
             question=data['question']
         )
         
-        # This call can also raise an external API error
         response = model.generate_content(prompt)
         answer = response.text
         
@@ -155,11 +141,9 @@ def chat():
         
         return jsonify({"answer": answer})
     
-    # Add this new `except` block BEFORE the generic `Exception`
     except ExternalApiError as e:
         db.session.rollback()
         error_logger.error(f"External API service failed: {e}", exc_info=True)
-        # Raise an ApiError with the 503 status code
         raise ApiError("The service is temporarily unavailable. Please try again later.", 503)
 
     except Exception as e:

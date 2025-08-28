@@ -5,15 +5,14 @@ from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import ValidationError
-from concurrent.futures import ThreadPoolExecutor
 from flask_migrate import Migrate
 from flask_cors import CORS
+from flask_wtf.csrf import CSRFProtect
 
 from app.config import Config
 from app.models import db, User
 from app.logging_config import setup_logging
 from app.exceptions import ApiError
-from app.admin import setup_admin
 from app import utils
 
 # Initialize extensions
@@ -22,7 +21,8 @@ limiter = Limiter(
     key_func=get_remote_address,
     storage_uri=Config.RATELIMIT_STORAGE_URI
 )
-migrate = Migrate() 
+migrate = Migrate()
+csrf = CSRFProtect()
 
 def create_app():
     """Application factory function."""
@@ -31,18 +31,28 @@ def create_app():
 
     app = Flask(__name__)
     app.config.from_object(Config)
-    
-    # Configure a simple thread pool for background tasks
-    app.config['EXECUTOR'] = ThreadPoolExecutor(max_workers=2)
+
+    # --- ADDED: Configure Celery with the Flask App Config ---
+    from app.celery_worker import celery
+    celery.conf.update(
+        broker_url=app.config['CELERY_BROKER_URL'],
+        result_backend=app.config['CELERY_RESULT_BACKEND']
+    )
+    celery.conf.update(app.config)
+    # ---------------------------------------------------------
 
     # Initialize extensions with the app object
     db.init_app(app)
     jwt.init_app(app)
     limiter.init_app(app)
     migrate.init_app(app, db)
-    setup_admin(app) # Setup the admin panel
+    csrf.init_app(app)
 
-    # --- OPTIMIZATION: Configure GenAI client once on startup ---
+    # Local import to break the circle
+    from app.admin import setup_admin
+    setup_admin(app)
+
+    # Configure GenAI client once on startup
     with app.app_context():
         utils.configure_genai()
 
@@ -51,7 +61,7 @@ def create_app():
     app.register_blueprint(api_bp, url_prefix='/api')
     CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS")}})
 
-    # --- CLI Commands ---
+    # --- CLI Commands (no changes) ---
     @app.cli.command("create-user")
     @click.argument("username")
     @click.argument("password")
@@ -66,7 +76,6 @@ def create_app():
         db.session.commit()
         print(f"User '{username}' created successfully.")
 
-    # --- ADDED: Secure CLI command to create an admin user ---
     @app.cli.command("create-admin")
     @click.argument("username")
     @click.argument("password")
@@ -86,13 +95,12 @@ def create_app():
         """Redirects the base URL ('/') to the admin login page ('/admin')."""
         return redirect(url_for('admin.index'))
 
-    # --- Request Logging ---
+    # --- Request Logging & Error Handlers (no changes) ---
     @app.before_request
     def log_request_info():
-        if not request.path.startswith('/static'): # Don't log static file requests
+        if not request.path.startswith('/static'):
             access_logger.info(f"Request: {request.method} {request.path} - IP: {request.remote_addr}")
 
-    # --- Custom Error Handlers ---
     @app.errorhandler(ApiError)
     def handle_api_error(error):
         return jsonify(error.to_dict()), error.status_code

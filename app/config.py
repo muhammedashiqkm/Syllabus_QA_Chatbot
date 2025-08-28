@@ -29,7 +29,6 @@ class Config:
     if not RATELIMIT_STORAGE_URI:
         raise ValueError("No RATELIMIT_STORAGE_URI found in environment variables.")
     
-
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
     
     # Google API Key
@@ -47,8 +46,15 @@ class Config:
 
     # AI Model Configuration
     EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "models/text-embedding-004")
-    LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "gemini-1.5-flash")
+    LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "gemini-2.5-flash")
+    
+    # ADDED: Configurable text chunking parameters
+    TEXT_CHUNK_SIZE = int(os.getenv("TEXT_CHUNK_SIZE", 1000))
+    TEXT_CHUNK_OVERLAP = int(os.getenv("TEXT_CHUNK_OVERLAP", 200))
 
+    # Celery Configuration
+    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
 
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True

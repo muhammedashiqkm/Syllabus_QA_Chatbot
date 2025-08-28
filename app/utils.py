@@ -5,6 +5,7 @@ import pypdf
 import google.generativeai as genai
 import logging
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from tenacity import retry, stop_after_attempt, wait_exponential
 from app.exceptions import ExternalApiError
 from flask import current_app
 
@@ -19,6 +20,11 @@ def configure_genai():
     genai.configure(api_key=api_key)
 
 # --- PDF Processing ---
+@retry(
+    wait=wait_exponential(multiplier=1, min=2, max=10), # Wait 2s, then 4s, then 8s...
+    stop=stop_after_attempt(3), # Attempt a total of 3 times
+    retry_error_callback=lambda _: None # Return None if all retries fail
+)
 def get_pdf_text(pdf_url: str) -> str | None:
     """Downloads a PDF from a URL and extracts its text content."""
     try:
@@ -39,8 +45,8 @@ def get_pdf_text(pdf_url: str) -> str | None:
 def get_text_chunks(text: str) -> list[str]:
     """Splits a long text into smaller, manageable chunks."""
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
+        chunk_size=current_app.config['TEXT_CHUNK_SIZE'],
+        chunk_overlap=current_app.config['TEXT_CHUNK_OVERLAP'],
         length_function=len
     )
     chunks = text_splitter.split_text(text)

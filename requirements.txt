@@ -17,3 +17,7 @@ WTForms==3.0.1
 Flask-Cors
 pymemcache
 whitenoise
+celery
+redis
+Flask-WTF
+python-json-logger
