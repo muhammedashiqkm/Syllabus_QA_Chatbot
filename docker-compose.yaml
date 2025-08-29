@@ -12,12 +12,11 @@ services:
     restart: unless-stopped
     volumes:
       - logs:/app/logs
-    command: ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:create_app()"] # The original command for the web server
     depends_on:
       - memcached
-      - redis  # Web app needs to connect to Redis to send tasks
+      - redis
 
-  # The Celery worker service
+  
   worker:
     build: .
     restart: unless-stopped
@@ -29,10 +28,12 @@ services:
     depends_on:
       - redis 
 
-  # The message broker service
+  
   redis:
     image: "redis:7-alpine"
     restart: unless-stopped
+    volumes:
+      - redis_data:/data
 
   memcached:
     image: memcached:1.6-alpine
@@ -40,4 +41,6 @@ services:
 
 volumes:
   logs:
+    driver: local
+  redis_data:
     driver: local
