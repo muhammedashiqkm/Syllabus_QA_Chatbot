@@ -1,152 +1,218 @@
-Of course. Here is the updated `README.md` file, focusing specifically on the database setup, migration command, and the JSON REST API documentation.
+
+
+# \#\# 🧠 Syllabus QA Chatbot
+
+This project is a sophisticated Retrieval-Augmented Generation (RAG) chatbot application. It's designed to answer questions based on a knowledge base of PDF documents, which are categorized by syllabus, class, and subject.
+
+The application features a secure, token-based REST API for user interactions and a full-featured admin panel for managing the knowledge base. Long-running tasks, like processing and embedding documents, are handled asynchronously by a Celery worker.
 
 -----
 
-# AI Chatbot API Setup & Documentation
+### \#\# ✨ Features
 
-This guide provides the essential steps to set up the application environment and documents the JSON REST API endpoints.
+  * **REST API**: Secure endpoints for user registration, login, and chat interactions.
+  * **Admin Panel**: A user-friendly interface to manage syllabuses, classes, subjects, and the documents that form the knowledge base.
+  * **RAG Pipeline**: Implements a full RAG workflow: PDF parsing, text chunking, vector embedding, and context-aware answer generation using Google's Generative AI models.
+  * **Asynchronous Background Processing**: Uses Celery and Redis to process new documents without blocking the admin interface.
+  * **Vector Search**: Leverages the `pgvector` extension for PostgreSQL to perform efficient semantic searches.
+  * **Containerized**: Fully containerized with Docker and Docker Compose for easy setup and deployment.
 
 -----
 
-## 🔧 Database Setup & Migration
+### \#\# 🚀 Getting Started
 
-### Step 1: Enable the Vector Extension in PostgreSQL
+Follow these instructions to get the application running locally.
 
-This application requires a **PostgreSQL** database with the **`pgvector`** extension enabled. This extension is crucial for storing and searching AI-generated text embeddings.
+### \#\#\# Prerequisites
 
-Connect to your PostgreSQL database instance and execute the following SQL command:
+  * **Docker**
+  * **Docker Compose**
 
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-```
+### \#\#\# Installation
 
-### Step 2: Configure Environment and Run Services
+1.  **Clone the repository**:
 
-1.  Create a `.env` file in the project root. Use the example below, ensuring the `DATABASE_URL` points to your database from Step 1.
-
-    ```env
-    # Flask and JWT Configuration
-    SECRET_KEY='a_very_strong_random_secret_key'
-    JWT_SECRET_KEY='another_very_strong_random_secret_key'
-
-    # Secret key required to use the /register API endpoint
-    REGISTRATION_SECRET_KEY='a_secret_phrase_for_registration'
-
-    # --- IMPORTANT ---
-    # Database Connection URL (ensure it points to your DB with pgvector)
-    DATABASE_URL='postgresql://user:password@host:port/dbname'
-
-    # Rate Limiter Storage URI (points to the memcached service in docker-compose)
-    RATELIMIT_STORAGE_URI='memcached://memcached:11211'
-
-    # Google AI API Key
-    GOOGLE_API_KEY='your_google_ai_api_key'
-
-    # Comma-separated list of allowed origins for CORS
-    CORS_ORIGINS='http://localhost:3000,http://127.0.0.1:3000'
+    ```bash
+    git clone <your-repository-url>
+    cd <your-project-directory>
     ```
 
-### Step 3: Run the Database Migration Command
-```bash
-flask db upgrade
-```
+2.  **Create the environment file**:
+    Copy the example environment file and fill in your specific credentials.
 
-### Step 4:  Build and start the application containers using Docker Compose
+    ```bash
+    cp .env.example .env
+    ```
 
-```bash
+    Now, edit the `.env` file with your details (database URL, API keys, secret keys, etc.).
+
+3.  **Enable pgvector in your Database**:
+    Before starting the application, you must enable the `pgvector` extension in your PostgreSQL database. Connect to your database as a superuser and run the following SQL command:
+
+    ```sql
+    CREATE EXTENSION IF NOT EXISTS vector;
+    ```
+
+4.  **Build and run the application**:
+    This command will build the Docker images and start all services (`web`, `worker`, `redis`, `memcached`) in the background.
+
+    ```bash
     docker-compose up --build -d
-```
+    ```
 
+5.  **Run database migrations**:
+    Apply the database schema to your database.
+
+    ```bash
+    docker-compose exec web flask db upgrade
+    ```
+
+6.  **Create an Admin User**:
+    Use the built-in CLI command to create your first admin user for the admin panel.
+
+    ```bash
+    docker-compose exec web flask create-admin <your_admin_username> '<your_strong_password>'
+    ```
 
 -----
 
-## 📖 JSON REST API and Responses
+### \#\# 🔐 Admin Panel
 
-The API base URL is `http://localhost:5000/api`. Protected endpoints require a `Bearer` token in the `Authorization` header.
+The admin panel is the control center for managing the chatbot's knowledge base.
 
-### `/register`
+  * **Access**: Navigate to `http://localhost:5000/admin` in your browser.
+  * **Authentication**: Log in using the admin credentials you created in the setup step.
+  * **Usage**: From the panel, you can:
+      * Create and manage **Syllabuses**, **Classes**, and **Subjects**.
+      * Add new **Documents** by providing a source PDF URL and linking it to the created categories. Adding or updating a document automatically triggers the background embedding process.
 
-  * **Method**: `POST`
-  * **Auth**: None
+-----
+
+### \#\# 🔑 API Authentication (Access Token)
+
+The API is secured using JSON Web Tokens (JWT). To access protected endpoints, you must first obtain an access token.
+
+1.  **Log In**: Send a `POST` request to the `/api/login` endpoint with a registered user's credentials.
+2.  **Receive Token**: The response will contain an `access_token`.
+3.  **Authorize Requests**: For all subsequent requests to protected endpoints, include the token in the `Authorization` header.
+    ```
+    Authorization: Bearer <your_access_token>
+    ```
+
+-----
+
+### \#\# 📡 API Endpoints
+
+All endpoints are prefixed with `/api`.
+
+### \#\#\# Authentication
+
+#### **`POST /register`**
+
+Registers a new user for the API.
+
   * **Request Body**:
     ```json
     {
-      "username": "api_user",
-      "password": "a_strong_password",
-      "registration_secret": "the_secret_phrase_from_your_env",
-      "is_admin": "True/False"
+        "username": "newuser",
+        "password": "strongpassword123",
+        "registration_secret": "your_secret_from_.env"
     }
-    if is admin True accees to admin panel and create access_token
-    
-    else only create access_token
-
     ```
-  * **Success Response (`201 Created`)**:
+  * **Success Response** (`201 Created`):
     ```json
     {
-      "message": "User 'api_user' registered successfully."
+        "message": "User 'newuser' registered successfully."
+    }
+    ```
+  * **Error Response** (`409 Conflict`):
+    ```json
+    {
+        "error": "Username already exists."
     }
     ```
 
-### `/login`
+#### **`POST /login`**
 
-  * **Method**: `POST`
-  * **Auth**: None
+Logs in a user and returns a JWT access token.
+
   * **Request Body**:
     ```json
     {
-      "username": "api_user",
-      "password": "a_strong_password"
+        "username": "newuser",
+        "password": "strongpassword123"
     }
     ```
-  * **Success Response (`200 OK`)**:
+  * **Success Response** (`200 OK`):
     ```json
     {
-      "access_token": "ey..."
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    ```
+  * **Error Response** (`401 Unauthorized`):
+    ```json
+    {
+        "error": "Invalid username or password"
     }
     ```
 
-### `/chat`
+### \#\#\# Chat Interaction
 
-  * **Method**: `POST`
-  * **Auth**: JWT Required
+#### **`GET /categories`**
+
+Retrieves a list of all available syllabuses, classes, and subjects. (Requires Authentication)
+
+  * **Request Body**: None
+  * **Success Response** (`200 OK`):
+    ```json
+    {
+        "syllabuses": ["CBSE", "ICSE"],
+        "classes": ["Class 10", "Class 12"],
+        "subjects": ["Mathematics", "Physics"]
+    }
+    ```
+
+#### **`POST /chat`**
+
+Submits a question to the chatbot for a specific document category. (Requires Authentication)
+
   * **Request Body**:
     ```json
     {
-      "chatbot_user_id": "unique_session_id_for_user",
-      "question": "What is Newton's first law of motion?",
-      "syllabus": "CBSE",
-      "class": "10",
-      "subject": "Science"
+        "chatbot_user_id": "session_abc_123",
+        "question": "What is Newton's second law?",
+        "syllabus": "CBSE",
+        "class": "Class 12",
+        "subject": "Physics"
     }
     ```
-  * **Success Response (`200 OK`)**:
+  * **Success Response** (`200 OK`):
     ```json
     {
-      "answer": "An object at rest stays at rest and an object in motion stays in motion with the same speed and in the same direction unless acted upon by an unbalanced force."
+        "answer": "Newton's second law of motion states that the acceleration of an object is directly proportional to the net force acting on it and inversely proportional to its mass."
     }
     ```
-  * **Error Response (`404 Not Found`)**:
+  * **Error Response** (`404 Not Found`):
     ```json
     {
-      "error": "Document matching the specified criteria not found."
+        "error": "Document matching the specified criteria not found."
     }
     ```
 
-### `/clear_session`
+#### **`POST /clear_session`**
 
-  * **Method**: `POST`
-  * **Auth**: JWT Required
+Clears the chat history for a specific session ID. (Requires Authentication)
+
   * **Request Body**:
     ```json
     {
-      "chatbot_user_id": "unique_session_id_to_clear"
+        "chatbot_user_id": "session_abc_123"
     }
     ```
-  * **Success Response (`200 OK`)**:
+  * **Success Response** (`200 OK`):
     ```json
     {
-      "message": "Successfully cleared session.",
-      "records_deleted": 15
+        "message": "Successfully cleared session.",
+        "records_deleted": 15
     }
     ```
