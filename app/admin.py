@@ -1,5 +1,5 @@
 import logging
-from flask import flash, request, redirect, url_for, session, render_template_string
+from flask import flash, request, redirect, url_for, session, render_template
 from flask_admin import Admin, AdminIndexView, BaseView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.model.template import macro
@@ -10,43 +10,6 @@ from app.celery_worker import process_document_embedding_task
 app_logger = logging.getLogger('app')
 security_logger = logging.getLogger('security')
 
-# --- Login Template ---
-LOGIN_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Admin Login</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-</head>
-<body>
-<div class="container">
-    <div class="row">
-        <div class="col-md-4 col-md-offset-4">
-            <h2>Admin Login</h2>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}
-                {% for category, message in messages %}
-                  <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-              {% endif %}
-            {% endwith %}
-            <form method="post">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" name="username" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Login</button>
-            </form>
-        </div>
-    </div>
-</div>
-</body>
-</html>
-"""
 
 # --- Session-based authentication views ---
 class AuthMixin:
@@ -77,7 +40,7 @@ class AdminLoginView(BaseView):
             else:
                 security_logger.warning(f"Failed admin login attempt for username: {username}")
                 flash('Invalid username or password.', 'error')
-        return render_template_string(LOGIN_TEMPLATE)
+        return render_template('admin/login.html')
     def is_visible(self):
         return False
 

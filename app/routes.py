@@ -40,7 +40,7 @@ def register():
         security_logger.warning(f"Registration attempt for existing username: {username}")
         raise ApiError("Username already exists.", 409)
 
-   
+    # The is_admin logic is now completely removed. The model default (False) will be used.
     new_user = User(username=username)
     new_user.set_password(data['password'])
 
@@ -49,6 +49,7 @@ def register():
 
     security_logger.info(f"New user registered: {username}")
     return jsonify({"message": f"User '{username}' registered successfully."}), 201
+
 
 @api_bp.route("/login", methods=["POST"])
 @limiter.limit("10 per hour")
