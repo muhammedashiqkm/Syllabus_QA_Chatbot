@@ -11,7 +11,7 @@ app_logger = logging.getLogger('app')
 security_logger = logging.getLogger('security')
 
 
-# --- Session-based authentication views ---
+
 class AuthMixin:
     def is_accessible(self):
         return session.get('admin_logged_in') is True
@@ -117,7 +117,7 @@ class DocumentView(AdminModelView):
 
 def setup_admin(app):
     """Initializes the admin panel."""
-    admin = Admin(app, name='Chatbot Admin', template_mode='bootstrap3', index_view=MyAdminIndexView(url="/admin"))
+    admin = Admin(app, name='Chatbot Admin', index_view=MyAdminIndexView(url="/admin"))
     admin.add_view(AdminModelView(Syllabus, db.session, category="Content Management"))
     admin.add_view(AdminModelView(ClassModel, db.session, name="Classes", category="Content Management"))
     admin.add_view(AdminModelView(Subject, db.session, category="Content Management"))

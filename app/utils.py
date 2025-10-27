@@ -4,14 +4,15 @@ import io
 import pypdf
 import google.generativeai as genai
 import logging
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+import asyncio
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from tenacity import retry, stop_after_attempt, wait_exponential
 from app.exceptions import ExternalApiError
 from flask import current_app
+from openai import OpenAI, AsyncOpenAI
 
 error_logger = logging.getLogger('error')
 
-# --- AI Model Configuration ---
 def configure_genai():
     """Configures the Google AI API key from the app config."""
     api_key = current_app.config.get("GOOGLE_API_KEY")
@@ -19,11 +20,10 @@ def configure_genai():
         raise ValueError("Google API Key not configured in the application.")
     genai.configure(api_key=api_key)
 
-# --- PDF Processing ---
 @retry(
-    wait=wait_exponential(multiplier=1, min=2, max=10), # Wait 2s, then 4s, then 8s...
-    stop=stop_after_attempt(3), # Attempt a total of 3 times
-    retry_error_callback=lambda _: None # Return None if all retries fail
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    stop=stop_after_attempt(3), 
+    retry_error_callback=lambda _: None
 )
 def get_pdf_text(pdf_url: str) -> str | None:
     """Downloads a PDF from a URL and extracts its text content."""
@@ -41,7 +41,7 @@ def get_pdf_text(pdf_url: str) -> str | None:
         error_logger.error(f"Error processing PDF from {pdf_url}: {e}")
         return None
 
-# --- Text Chunking ---
+
 def get_text_chunks(text: str) -> list[str]:
     """Splits a long text into smaller, manageable chunks."""
     text_splitter = RecursiveCharacterTextSplitter(
@@ -52,9 +52,9 @@ def get_text_chunks(text: str) -> list[str]:
     chunks = text_splitter.split_text(text)
     return chunks
 
-# --- AI Model Interactions ---
+
 def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
-    """Generates vector embeddings for a batch of texts using Google AI."""
+    """Generates vector embeddings for a batch of texts using Google AI. (Sync for Celery)"""
     try:
         model_name = current_app.config.get("EMBEDDING_MODEL_NAME")
         result = genai.embed_content(
@@ -65,27 +65,26 @@ def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
         return result['embedding']
     except Exception as e:
         error_logger.error(f"Error getting batch embedding from GenAI: {e}", exc_info=True)
-        # Raise the custom exception instead of returning None
         raise ExternalApiError("The embedding service failed.") from e
 
-def get_single_embedding(text: str) -> list[float]:
-    """Generates a vector embedding for a single text query."""
+async def get_single_embedding_async(text: str) -> list[float]:
+    """Generates a vector embedding for a single text query asynchronously."""
     try:
         model_name = current_app.config.get("EMBEDDING_MODEL_NAME")
-        result = genai.embed_content(
+        result = await genai.embed_content_async(
             model=model_name,
             content=text,
             task_type="retrieval_query"
         )
         return result['embedding']
     except Exception as e:
-        error_logger.error(f"Error getting single embedding from GenAI: {e}", exc_info=True)
-        # Raise the custom exception instead of returning None
+        error_logger.error(f"Error getting single embedding from GenAI (async): {e}", exc_info=True)
         raise ExternalApiError("The embedding service failed.") from e
 
-def get_conversational_chain():
-    """Creates the prompt template and loads the generative model for Q&A."""
-    prompt_template = """
+
+def get_system_prompt() -> str:
+    """Returns the system prompt (rules) for the AI."""
+    return """
     You are a helpful AI assistant designed to analyze and synthesize information. Follow these rules precisely:
 
 1.  *Your Core Purpose:* Your main role is to answer questions by synthesizing information found in the 'Knowledge Base'.
@@ -98,7 +97,11 @@ def get_conversational_chain():
     - *No Direct Definition:* If the user asks for a definition (e.g., "what is X?") and a formal definition is not present, create a descriptive summary of X based on all the available information in the context.
     - *Handling Insufficient Information:* If the context mentions the topic but does not contain enough detail to answer the question thoroughly, first state what is known, and then clarify that a complete answer or definition is not available in the provided text.
     - *Safety Net:* If the 'Knowledge Base' contains no relevant information about the question's subject at all, then and only then should you respond with the exact phrase: "I don't have the information in my knowledge base."
+    """
 
+def get_user_prompt_content(context: str, chat_history: str, question: str) -> str:
+    """Formats the user-facing part of the prompt."""
+    return f"""
     Knowledge Base:
     {context}
 
@@ -108,7 +111,68 @@ def get_conversational_chain():
     Human: {question}
     AI:
     """
+
+async def _get_gemini_response_async(system_prompt: str, user_prompt: str) -> str:
+    """Gets a response from the Google Gemini model asynchronously."""
+    try:
+        model_name = current_app.config["GEMINI_MODEL_NAME"]
+        model = genai.GenerativeModel(model_name)
+        full_prompt = f"{system_prompt}\n\n{user_prompt}"
+        response = await model.generate_content_async(full_prompt)
+        return response.text
+    except Exception as e:
+        error_logger.error(f"Error getting response from GenAI (async): {e}", exc_info=True)
+        raise ExternalApiError("The Gemini service failed.") from e
+
+async def _get_openai_compatible_response_async(system_prompt: str, user_prompt: str, api_key: str, base_url: str | None, model_name: str) -> str:
+    """Gets a response from an OpenAI-compatible API asynchronously."""
+    try:
+        client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        response = await client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        error_logger.error(f"Error getting response from OpenAI-compatible API ({model_name}) (async): {e}", exc_info=True)
+        raise ExternalApiError(f"The {model_name} service failed.") from e
+
+async def get_model_response_async(system_prompt: str, user_prompt: str, model_provider: str) -> str:
+    """
+    Routes the prompt to the correct LLM provider and returns a response asynchronously.
+    """
+    if model_provider == "gemini":
+        return await _get_gemini_response_async(system_prompt, user_prompt)
     
-    model_name = current_app.config.get("LLM_MODEL_NAME")
-    model = genai.GenerativeModel(model_name)
-    return model, prompt_template
+    elif model_provider == "openai":
+        api_key = current_app.config["OPENAI_API_KEY"]
+        model_name = current_app.config["OPENAI_MODEL_NAME"]
+        if not api_key:
+            raise ExternalApiError("OpenAI API key is not configured.")
+        return await _get_openai_compatible_response_async(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            api_key=api_key,
+            base_url=None,
+            model_name=model_name
+        )
+    
+    elif model_provider == "deepseek":
+        api_key = current_app.config["DEEPSEEK_API_KEY"]
+        model_name = current_app.config["DEEPSEEK_MODEL_NAME"]
+        base_url = current_app.config["DEEPSEEK_BASE_URL"]
+        if not api_key:
+            raise ExternalApiError("DeepSeek API key is not configured.")
+        return await _get_openai_compatible_response_async(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            api_key=api_key,
+            base_url=base_url,
+            model_name=model_name
+        )
+    
+    else:
+        raise ValueError(f"Unknown model provider: {model_provider}")

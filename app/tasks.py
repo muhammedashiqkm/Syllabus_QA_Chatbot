@@ -1,10 +1,8 @@
-# app/tasks.py
 import logging
 import time
 from app.models import db, Document, DocumentChunk
 from app import utils
 
-# Get logger instances
 app_logger = logging.getLogger('app')
 error_logger = logging.getLogger('error')
 
@@ -32,7 +30,6 @@ def process_document_embedding(document_id):
         if not embeddings:
             raise ValueError("Failed to generate embeddings from the AI model.")
 
-        # Clear old chunks before adding new ones
         DocumentChunk.query.filter_by(document_id=doc.id).delete()
         db.session.commit()
 

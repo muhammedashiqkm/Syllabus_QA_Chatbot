@@ -14,7 +14,6 @@ from app.logging_config import setup_logging
 from app.exceptions import ApiError
 from app import utils
 
-# Initialize extensions
 jwt = JWTManager()
 limiter = Limiter(
     key_func=get_remote_address,
@@ -30,7 +29,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Configure Celery with the Flask App Config
     from app.celery_worker import celery
     celery.conf.update(
         broker_url=app.config['CELERY_BROKER_URL'],
@@ -38,39 +36,22 @@ def create_app():
     )
     celery.conf.update(app.config)
 
-    # Initialize extensions with the app object
     db.init_app(app)
     jwt.init_app(app)
     limiter.init_app(app)
     migrate.init_app(app, db)
 
-    # Local import to break the circle
     from app.admin import setup_admin
     setup_admin(app)
 
-    # Configure GenAI client once on startup
+    
     with app.app_context():
         utils.configure_genai()
 
-    # Register Blueprints
     from app.routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
     CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS")}})
 
-    # CLI Commands
-    @app.cli.command("create-user")
-    @click.argument("username")
-    @click.argument("password")
-    def create_user(username, password):
-        """Creates a new end-user for the API."""
-        if User.query.filter_by(username=username).first():
-            print(f"User '{username}' already exists.")
-            return
-        new_user = User(username=username, is_admin=False)
-        new_user.set_password(password)
-        db.session.add(new_user)
-        db.session.commit()
-        print(f"User '{username}' created successfully.")
 
     @app.cli.command("create-admin")
     @click.argument("username")

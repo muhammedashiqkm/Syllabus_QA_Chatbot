@@ -7,18 +7,13 @@ def setup_logging():
     
     log_directory = 'logs'
 
-    # Create logs directory if it doesn't exist
     os.makedirs(log_directory, exist_ok=True)
 
-    # --- Formatter ---
-    # A consistent format for all log messages
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    # --- Handlers ---
-    # Define file handlers for rotating logs
     app_handler = RotatingFileHandler(f'{log_directory}/app.log', maxBytes=10485760, backupCount=5)
     app_handler.setFormatter(formatter)
 
@@ -31,25 +26,20 @@ def setup_logging():
     security_handler = RotatingFileHandler(f'{log_directory}/security.log', maxBytes=10485760, backupCount=5)
     security_handler.setFormatter(formatter)
 
-    # --- Loggers ---
-    # Get logger instances and attach the file handlers.
-    
-    # General application logger
+   
     app_logger = logging.getLogger('app')
     app_logger.setLevel(logging.INFO)
     app_logger.addHandler(app_handler)
 
-    # Logger for critical errors and exceptions
     error_logger = logging.getLogger('error')
     error_logger.setLevel(logging.ERROR)
     error_logger.addHandler(error_handler)
 
-    # Logger for incoming requests
     access_logger = logging.getLogger('access')
     access_logger.setLevel(logging.INFO)
     access_logger.addHandler(access_handler)
     
-    # Logger for security-related events (login, registration, etc.)
+    
     security_logger = logging.getLogger('security')
     security_logger.setLevel(logging.INFO)
     security_logger.addHandler(security_handler)

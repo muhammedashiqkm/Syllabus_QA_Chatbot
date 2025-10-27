@@ -1,218 +1,215 @@
+# Syllabus QA Chatbot
 
+This is a comprehensive, production-ready RAG (Retrieval-Augmented Generation) chatbot application built with Flask, Celery, and `pgvector`.
 
-# \#\# 🧠 Syllabus QA Chatbot
+Its core purpose is to allow administrators to upload PDF documents (categorized by Syllabus, Class, and Subject) and API users to "chat" with those specific documents using multiple AI models (Gemini, OpenAI, and DeepSeek).
 
-This project is a sophisticated Retrieval-Augmented Generation (RAG) chatbot application. It's designed to answer questions based on a knowledge base of PDF documents, which are categorized by syllabus, class, and subject.
+## Features
 
-The application features a secure, token-based REST API for user interactions and a full-featured admin panel for managing the knowledge base. Long-running tasks, like processing and embedding documents, are handled asynchronously by a Celery worker.
-
------
-
-### \#\# ✨ Features
-
-  * **REST API**: Secure endpoints for user registration, login, and chat interactions.
-  * **Admin Panel**: A user-friendly interface to manage syllabuses, classes, subjects, and the documents that form the knowledge base.
-  * **RAG Pipeline**: Implements a full RAG workflow: PDF parsing, text chunking, vector embedding, and context-aware answer generation using Google's Generative AI models.
-  * **Asynchronous Background Processing**: Uses Celery and Redis to process new documents without blocking the admin interface.
-  * **Vector Search**: Leverages the `pgvector` extension for PostgreSQL to perform efficient semantic searches.
-  * **Containerized**: Fully containerized with Docker and Docker Compose for easy setup and deployment.
+  * **Async API:** Built with Flask and served by Uvicorn for asynchronous requests.
+  * **Admin Panel:** A secure Flask-Admin interface (`/admin`) for managing documents and categories.
+  * **Async PDF Processing:** When a new `Document` is added, a Celery worker downloads, chunks, and creates vector embeddings in the background.
+  * **Vector Search:** Uses `pgvector` for efficient, RAG-based context retrieval.
+  * **Multi-Model Support:** The `/chat` endpoint can route requests to **Gemini**, **OpenAI**, or **DeepSeek** based on user input.
+  * **Secure:** Uses JWT for API authentication and session-based auth for the admin panel.
 
 -----
 
-### \#\# 🚀 Getting Started
+## Database & Application Setup
 
-Follow these instructions to get the application running locally.
+### 1\. Run Docker Services
 
-### \#\#\# Prerequisites
+First, build and run all the services (web, worker, redis, memcached) in detached mode:
 
-  * **Docker**
-  * **Docker Compose**
+```sh
+docker-compose up --build -d
+```
 
-### \#\#\# Installation
+### 2\. Initialize the Database (One-Time Setup)
 
-1.  **Clone the repository**:
+You must run this command **once** to prepare the PostgreSQL database. This script enables the `vector` extension and creates all your tables.
 
-    ```bash
-    git clone <your-repository-url>
-    cd <your-project-directory>
-    ```
+```sh
+docker-compose exec web python create_db.py
+```
 
-2.  **Create the environment file**:
-    Copy the example environment file and fill in your specific credentials.
+You should see output like "PostgreSQL 'vector' extension is enabled." and "Database tables created successfully."
 
-    ```bash
-    cp .env.example .env
-    ```
+### 3\. Create Users
 
-    Now, edit the `.env` file with your details (database URL, API keys, secret keys, etc.).
 
-3.  **Enable pgvector in your Database**:
-    Before starting the application, you must enable the `pgvector` extension in your PostgreSQL database. Connect to your database as a superuser and run the following SQL command:
+**To Create an Admin User (for the `/admin` panel):**
 
-    ```sql
-    CREATE EXTENSION IF NOT EXISTS vector;
-    ```
-
-4.  **Build and run the application**:
-    This command will build the Docker images and start all services (`web`, `worker`, `redis`, `memcached`) in the background.
-
-    ```bash
-    docker-compose up --build -d
-    ```
-
-5.  **Run database migrations**:
-    Apply the database schema to your database.
-
-    ```bash
-    docker-compose exec web flask db upgrade
-    ```
-
-6.  **Create an Admin User**:
-    Use the built-in CLI command to create your first admin user for the admin panel.
-
-    ```bash
-    docker-compose exec web flask create-admin <your_admin_username> '<your_strong_password>'
-    ```
+```sh
+docker-compose exec web flask create-admin <your-admin-username> <your-admin-password>
+```
 
 -----
 
-### \#\# 🔐 Admin Panel
+## Admin Panel
 
-The admin panel is the control center for managing the chatbot's knowledge base.
+Access the admin panel by navigating to `/admin` in your browser. Log in with the admin credentials you just created.
 
-  * **Access**: Navigate to `http://localhost:5000/admin` in your browser.
-  * **Authentication**: Log in using the admin credentials you created in the setup step.
-  * **Usage**: From the panel, you can:
-      * Create and manage **Syllabuses**, **Classes**, and **Subjects**.
-      * Add new **Documents** by providing a source PDF URL and linking it to the created categories. Adding or updating a document automatically triggers the background embedding process.
+Here you can:
 
------
-
-### \#\# 🔑 API Authentication (Access Token)
-
-The API is secured using JSON Web Tokens (JWT). To access protected endpoints, you must first obtain an access token.
-
-1.  **Log In**: Send a `POST` request to the `/api/login` endpoint with a registered user's credentials.
-2.  **Receive Token**: The response will contain an `access_token`.
-3.  **Authorize Requests**: For all subsequent requests to protected endpoints, include the token in the `Authorization` header.
-    ```
-    Authorization: Bearer <your_access_token>
-    ```
+  * Create `Syllabus`, `ClassModel`, and `Subject` entries.
+  * Create `Document` entries, linking them to a `source_url` (PDF) and the categories. This will automatically trigger the background embedding task.
 
 -----
 
-### \#\# 📡 API Endpoints
+## API Endpoints
 
-All endpoints are prefixed with `/api`.
+All API endpoints are prefixed with `/api`. All protected endpoints require a Bearer Token in the `Authorization` header.
 
-### \#\#\# Authentication
+### `POST /api/login`
 
-#### **`POST /register`**
+Logs in an API user and returns a JSON Web Token (JWT).
 
-Registers a new user for the API.
+**Request Body:**
 
-  * **Request Body**:
-    ```json
-    {
-        "username": "newuser",
-        "password": "strongpassword123",
-        "registration_secret": "your_secret_from_.env"
-    }
-    ```
-  * **Success Response** (`201 Created`):
-    ```json
-    {
-        "message": "User 'newuser' registered successfully."
-    }
-    ```
-  * **Error Response** (`409 Conflict`):
-    ```json
-    {
-        "error": "Username already exists."
-    }
-    ```
+```json
+{
+    "username": "your-api-username",
+    "password": "your-api-password"
+}
+```
 
-#### **`POST /login`**
+**Success Response (200):**
 
-Logs in a user and returns a JWT access token.
+```json
+{
+    "access_token": "your.jwt.token.here"
+}
+```
 
-  * **Request Body**:
-    ```json
-    {
-        "username": "newuser",
-        "password": "strongpassword123"
-    }
-    ```
-  * **Success Response** (`200 OK`):
-    ```json
-    {
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    }
-    ```
-  * **Error Response** (`401 Unauthorized`):
-    ```json
-    {
-        "error": "Invalid username or password"
-    }
-    ```
+**Error Response (401):**
 
-### \#\#\# Chat Interaction
+```json
+{
+    "error": "Invalid username or password"
+}
+```
 
-#### **`GET /categories`**
+-----
 
-Retrieves a list of all available syllabuses, classes, and subjects. (Requires Authentication)
+### `GET /api/categories`
 
-  * **Request Body**: None
-  * **Success Response** (`200 OK`):
-    ```json
-    {
-        "syllabuses": ["CBSE", "ICSE"],
-        "classes": ["Class 10", "Class 12"],
-        "subjects": ["Mathematics", "Physics"]
-    }
-    ```
+(Protected) Fetches a list of all available categories for filtering.
 
-#### **`POST /chat`**
+**Request Body:**
+*None*
 
-Submits a question to the chatbot for a specific document category. (Requires Authentication)
+**Success Response (200):**
 
-  * **Request Body**:
-    ```json
-    {
-        "chatbot_user_id": "session_abc_123",
-        "question": "What is Newton's second law?",
-        "syllabus": "CBSE",
-        "class": "Class 12",
-        "subject": "Physics"
-    }
-    ```
-  * **Success Response** (`200 OK`):
-    ```json
-    {
-        "answer": "Newton's second law of motion states that the acceleration of an object is directly proportional to the net force acting on it and inversely proportional to its mass."
-    }
-    ```
-  * **Error Response** (`404 Not Found`):
-    ```json
-    {
-        "error": "Document matching the specified criteria not found."
-    }
-    ```
+```json
+{
+    "syllabuses": [
+        "Syllabus A",
+        "Syllabus B"
+    ],
+    "classes": [
+        "Class 10",
+        "Class 12"
+    ],
+    "subjects": [
+        "Physics",
+        "Chemistry"
+    ]
+}
+```
 
-#### **`POST /clear_session`**
+-----
 
-Clears the chat history for a specific session ID. (Requires Authentication)
+### `POST /api/chat`
 
-  * **Request Body**:
-    ```json
-    {
-        "chatbot_user_id": "session_abc_123"
-    }
-    ```
-  * **Success Response** (`200 OK`):
-    ```json
-    {
-        "message": "Successfully cleared session.",
-        "records_deleted": 15
-    }
-    ```
+(Protected) This is the main asynchronous chat endpoint. It finds the relevant document, performs a vector search for context, and sends the prompt to the specified AI model.
+
+**Request Body:**
+
+  * **model**: Must be one of `gemini`, `openai`, or `deepseek`.
+  * **class**: Mapped from the JSON key `class`.
+
+<!-- end list -->
+
+```json
+{
+    "chatbot_user_id": "some-unique-user-session-id",
+    "question": "What is the second law of thermodynamics?",
+    "syllabus": "Syllabus A",
+    "class": "Class 12",
+    "subject": "Physics",
+    "model": "gemini"
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+    "answer": "The second law of thermodynamics states that the total entropy of an isolated system can only increase over time or remain constant..."
+}
+```
+
+**Error Response (400 - Validation Error):**
+
+```json
+{
+    "error": "Validation failed: {'model': ['Must be one of: gemini, openai, deepseek.']}"
+}
+```
+
+**Error Response (404 - Not Found):**
+
+```json
+{
+    "error": "Document matching the specified criteria not found."
+}
+```
+
+**Error Response (503 - Service Failure):**
+
+```json
+{
+    "error": "The AI service failed: OpenAI API key is not configured."
+}
+```
+
+-----
+
+### `POST /api/clear_session`
+
+(Protected) Asynchronously clears all chat history for a given session ID.
+
+**Request Body:**
+
+```json
+{
+    "chatbot_user_id": "some-unique-user-session-id"
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+    "message": "Successfully cleared session.",
+    "records_deleted": 15
+}
+```
+
+-----
+
+### `GET /api/health`
+
+A simple health check endpoint to confirm the web service is running.
+
+**Request Body:**
+*None*
+
+**Success Response (200):**
+
+```json
+{
+    "status": "healthy"
+}
+```

@@ -13,10 +13,6 @@ class Config:
     if not SECRET_KEY:
         raise ValueError("No SECRET_KEY found in environment variables. This is required for security.")
 
-    # Secret key required to register the first admin user
-    REGISTRATION_SECRET_KEY = os.getenv("REGISTRATION_SECRET_KEY")
-    if not REGISTRATION_SECRET_KEY:
-        raise ValueError("No REGISTRATION_SECRET_KEY found in environment variables.")
 
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
@@ -41,16 +37,30 @@ class Config:
     if not JWT_SECRET_KEY:
         raise ValueError("No JWT_SECRET_KEY found in environment variables")
         
-    # Load token expiration from .env in HOURS, defaulting to 24 hours.
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 24)))
 
     # AI Model Configuration
     EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "models/text-embedding-004")
-    LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "gemini-2.5-flash")
+
+    # --- LLM Provider Settings ---
+
+    # Google Gemini
+    GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
+    
+    # OpenAI
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_MODEL_NAME = os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini")
+    
+    # DeepSeek (uses OpenAI-compatible API)
+    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+    DEEPSEEK_MODEL_NAME = os.getenv("DEEPSEEK_MODEL_NAME", "deepseek-chat")
+    DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
     
     # ADDED: Configurable text chunking parameters
     TEXT_CHUNK_SIZE = int(os.getenv("TEXT_CHUNK_SIZE", 1000))
     TEXT_CHUNK_OVERLAP = int(os.getenv("TEXT_CHUNK_OVERLAP", 200))
+
+    CHAT_HISTORY_LIMIT = int(os.getenv("CHAT_HISTORY_LIMIT", 10))
 
     # Celery Configuration
     CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')

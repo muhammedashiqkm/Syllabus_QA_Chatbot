@@ -25,3 +25,5 @@ logs
 # IDE files
 .vscode/
 .idea/
+
+*.pdf
