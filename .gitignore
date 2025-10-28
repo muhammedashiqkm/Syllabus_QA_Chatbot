@@ -10,6 +10,9 @@ venv/
 env/
 ENV/
 
+# Ignore pdf files
+*.pdf
+
 # Python cache and artifacts
 __pycache__/
 *.pyc
